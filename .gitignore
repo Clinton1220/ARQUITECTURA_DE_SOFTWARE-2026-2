@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Entorno y credenciales (REGLA DE ORO: Nunca versionar credenciales)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+
+# Cobertura y pruebas
+coverage/
+.nyc_output/
+
+# Compilados y empaquetados
+dist/
+build/
+
+# Base de datos local temporal (SQLite de test)
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

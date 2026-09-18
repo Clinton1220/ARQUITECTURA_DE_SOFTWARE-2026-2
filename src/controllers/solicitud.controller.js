@@ -8,6 +8,15 @@ const generarNumeroRadicado = () => {
   return `RAD-${anio}-${aleatorio}`;
 };
 
+// Etiquetas de estado para notificaciones
+const ESTADO_LABELS = {
+  radicada: '📝 Radicada',
+  en_revision: '🔍 En Revisión',
+  aprobada: '✅ Aprobada',
+  rechazada: '❌ Rechazada',
+  cancelada: '🚫 Cancelada'
+};
+
 // CREATE (HU-01: Radicación de solicitud de certificado)
 exports.crear = async (req, res, next) => {
   const t = await sequelize.transaction();
@@ -21,7 +30,6 @@ exports.crear = async (req, res, next) => {
       });
     }
 
-    // Verificar que el tipo de trámite exista y esté habilitado
     const tipo = await TipoTramite.findOne({
       where: { id: tipoTramiteId, activo: true },
       transaction: t
@@ -34,7 +42,7 @@ exports.crear = async (req, res, next) => {
       });
     }
 
-    // Regla de negocio: Evitar duplicidad de solicitudes activas para el mismo predio y trámite
+    // Regla de negocio: Evitar duplicidad de solicitudes activas
     const solicitudPrevia = await SolicitudTramite.findOne({
       where: {
         usuarioId: req.usuario.id,
@@ -72,7 +80,7 @@ exports.crear = async (req, res, next) => {
       activo: true
     }, { transaction: t });
 
-    // Registro inmutable de auditoría (RF-09 / Personería)
+    // Auditoría inmutable (RF-09 / Personería)
     await AuditoriaTramite.create({
       solicitudId: solicitud.id,
       usuarioId: req.usuario.id,
@@ -84,6 +92,23 @@ exports.crear = async (req, res, next) => {
     }, { transaction: t });
 
     await t.commit();
+
+    // ══════════════════════════════════════════════════════════
+    // NOTIFICACIÓN EN TIEMPO REAL: Nueva solicitud → todos los funcionarios
+    // ══════════════════════════════════════════════════════════
+    const io = req.app.get('io');
+    if (io) {
+      const payload = {
+        tipo: 'NUEVA_SOLICITUD',
+        radicado,
+        tramite: tipo.nombre,
+        ciudadano: req.usuario.nombre,
+        barrioVereda,
+        timestamp: new Date().toISOString()
+      };
+      io.to('sala-funcionarios').emit('nueva_solicitud', payload);
+      io.to('sala-general').emit('metricas_actualizadas', { accion: 'nueva_solicitud' });
+    }
 
     return res.status(201).json({
       mensaje: 'Solicitud radicada exitosamente en la Alcaldía Municipal',
@@ -100,12 +125,10 @@ exports.listar = async (req, res, next) => {
   try {
     const where = { activo: true };
 
-    // Si es ciudadano, solo consulta sus propias solicitudes
     if (req.usuario.rol === 'ciudadano') {
       where.usuarioId = req.usuario.id;
     }
 
-    // Filtro opcional por estado
     if (req.query.estado) {
       where.estado = req.query.estado;
     }
@@ -133,7 +156,7 @@ exports.listar = async (req, res, next) => {
   }
 };
 
-// READ: Consulta por radicado (Seguimiento ciudadano 24/7 sin filas - RF-05)
+// READ: Consulta pública por radicado (RF-05 — Seguimiento ciudadano 24/7)
 exports.obtenerPorRadicado = async (req, res, next) => {
   try {
     const { radicado } = req.params;
@@ -141,16 +164,8 @@ exports.obtenerPorRadicado = async (req, res, next) => {
     const solicitud = await SolicitudTramite.findOne({
       where: { radicado, activo: true },
       include: [
-        {
-          model: TipoTramite,
-          as: 'tipoTramite',
-          attributes: ['codigo', 'nombre', 'vigenciaDias']
-        },
-        {
-          model: Usuario,
-          as: 'ciudadano',
-          attributes: ['nombre', 'documentoIdentidad']
-        }
+        { model: TipoTramite, as: 'tipoTramite', attributes: ['codigo', 'nombre', 'vigenciaDias'] },
+        { model: Usuario, as: 'ciudadano', attributes: ['nombre', 'documentoIdentidad'] }
       ]
     });
 
@@ -175,6 +190,10 @@ exports.actualizar = async (req, res, next) => {
 
     const solicitud = await SolicitudTramite.findOne({
       where: { id, activo: true },
+      include: [
+        { model: TipoTramite, as: 'tipoTramite', attributes: ['nombre'] },
+        { model: Usuario, as: 'ciudadano', attributes: ['id', 'nombre'] }
+      ],
       transaction: t
     });
 
@@ -183,7 +202,6 @@ exports.actualizar = async (req, res, next) => {
       return res.status(404).json({ error: 'Solicitud no encontrada o inactiva' });
     }
 
-    // Si es ciudadano, solo puede modificar si aún está en estado 'radicada' y es de su propiedad
     if (req.usuario.rol === 'ciudadano') {
       if (solicitud.usuarioId !== req.usuario.id) {
         await t.rollback();
@@ -208,7 +226,6 @@ exports.actualizar = async (req, res, next) => {
       motivoRechazo: motivoRechazo || solicitud.motivoRechazo
     }, { transaction: t });
 
-    // Auditoría si cambió el estado
     if (estadoAnterior !== nuevoEstado) {
       await AuditoriaTramite.create({
         solicitudId: solicitud.id,
@@ -222,6 +239,32 @@ exports.actualizar = async (req, res, next) => {
     }
 
     await t.commit();
+
+    // ══════════════════════════════════════════════════════════
+    // NOTIFICACIÓN EN TIEMPO REAL: Cambio de estado → ciudadano afectado
+    // ══════════════════════════════════════════════════════════
+    if (estadoAnterior !== nuevoEstado) {
+      const io = req.app.get('io');
+      if (io) {
+        const ciudadanoId = solicitud.ciudadano ? solicitud.ciudadano.id : solicitud.usuarioId;
+        const payload = {
+          tipo: 'CAMBIO_ESTADO',
+          radicado: solicitud.radicado,
+          tramite: solicitud.tipoTramite ? solicitud.tipoTramite.nombre : 'N/A',
+          estadoAnterior,
+          estadoNuevo: nuevoEstado,
+          estadoLabel: ESTADO_LABELS[nuevoEstado] || nuevoEstado,
+          funcionario: req.usuario.nombre,
+          timestamp: new Date().toISOString()
+        };
+        // Notificar al ciudadano específico
+        io.to(`sala-ciudadano-${ciudadanoId}`).emit('estado_actualizado', payload);
+        // Notificar a todos los funcionarios también
+        io.to('sala-funcionarios').emit('estado_actualizado', payload);
+        io.to('sala-general').emit('metricas_actualizadas', { accion: 'cambio_estado', nuevoEstado });
+      }
+    }
+
     return res.status(200).json(solicitud);
   } catch (error) {
     await t.rollback();
@@ -229,7 +272,7 @@ exports.actualizar = async (req, res, next) => {
   }
 };
 
-// DELETE LÓGICO: Cancela y desactiva la solicitud conservando el registro histórico
+// DELETE LÓGICO: Cancela y desactiva la solicitud conservando historial
 exports.eliminar = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
@@ -245,30 +288,40 @@ exports.eliminar = async (req, res, next) => {
       return res.status(404).json({ error: 'Solicitud no encontrada' });
     }
 
-    // Verificar propiedad si es ciudadano
     if (req.usuario.rol === 'ciudadano' && solicitud.usuarioId !== req.usuario.id) {
       await t.rollback();
       return res.status(403).json({ error: 'No autorizado para eliminar esta solicitud' });
     }
 
-    // Borrado lógico: activo = false y estado = 'cancelada'
+    const estadoAnterior = solicitud.estado;
+
     await solicitud.update({
       activo: false,
       estado: 'cancelada'
     }, { transaction: t });
 
-    // Auditoría de eliminación lógica
     await AuditoriaTramite.create({
       solicitudId: solicitud.id,
       usuarioId: req.usuario.id,
       accion: 'ELIMINACION_LOGICA',
-      estadoAnterior: solicitud.estado,
+      estadoAnterior,
       estadoNuevo: 'cancelada',
       detalle: 'Solicitud cancelada y marcada inactiva por borrado lógico',
       ipOrigen: req.ip || req.connection.remoteAddress
     }, { transaction: t });
 
     await t.commit();
+
+    // NOTIFICACIÓN EN TIEMPO REAL: Cancelación
+    const io = req.app.get('io');
+    if (io) {
+      io.to('sala-funcionarios').emit('solicitud_cancelada', {
+        radicado: solicitud.radicado,
+        timestamp: new Date().toISOString()
+      });
+      io.to('sala-general').emit('metricas_actualizadas', { accion: 'cancelacion' });
+    }
+
     return res.status(204).send();
   } catch (error) {
     await t.rollback();
@@ -300,12 +353,33 @@ exports.verificarAutenticidad = async (req, res, next) => {
       valido: solicitud.estado === 'aprobada',
       radicado: solicitud.radicado,
       estado: solicitud.estado,
+      estadoLabel: ESTADO_LABELS[solicitud.estado] || solicitud.estado,
       tipoTramite: solicitud.tipoTramite.nombre,
       ciudadano: solicitud.ciudadano.nombre,
       documentoIdentidad: solicitud.ciudadano.documentoIdentidad,
       direccionPredio: solicitud.direccionPredio,
       fechaEmision: solicitud.updatedAt,
       entidadEmisora: 'Alcaldía Municipal - Secretaría de Gobierno'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DASHBOARD: Métricas agregadas en tiempo real para el panel de control
+exports.metricas = async (req, res, next) => {
+  try {
+    const [total, radicadas, enRevision, aprobadas, rechazadas] = await Promise.all([
+      SolicitudTramite.count({ where: { activo: true } }),
+      SolicitudTramite.count({ where: { activo: true, estado: 'radicada' } }),
+      SolicitudTramite.count({ where: { activo: true, estado: 'en_revision' } }),
+      SolicitudTramite.count({ where: { activo: true, estado: 'aprobada' } }),
+      SolicitudTramite.count({ where: { activo: true, estado: 'rechazada' } })
+    ]);
+
+    return res.status(200).json({
+      total, radicadas, enRevision, aprobadas, rechazadas,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     next(error);

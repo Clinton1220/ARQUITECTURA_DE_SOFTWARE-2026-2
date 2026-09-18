@@ -3,122 +3,232 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal de Trámites y Certificados 24/7 - Alcaldía Municipal</title>
+  <title>Portal de Trámites 24/7 — Alcaldía Municipal</title>
+  <meta name="description" content="Portal oficial de trámites y certificados en línea de la Alcaldía Municipal. Sin filas, sin horarios, disponible las 24 horas.">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Encabezado Institucional -->
+
+  <!-- BARRA DE NOTIFICACIONES EN TIEMPO REAL -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ENCABEZADO INSTITUCIONAL -->
   <header class="header">
     <div class="container header-container">
       <div class="brand">
-        <div class="brand-badge">🏛️ GOV.CO</div>
+        <div class="brand-badge"><i class="bi bi-bank2"></i> GOV.CO</div>
         <div class="brand-titles">
           <h1>Alcaldía Municipal</h1>
           <p>Secretaría de Gobierno — Trámites y Certificados en Línea 24/7</p>
         </div>
       </div>
-      <div class="header-status">
-        <span class="status-indicator"></span>
-        <span id="system-status-text">Sistema Operativo 24/7</span>
+      <div class="header-right">
+        <div class="ws-indicator" id="ws-indicator" title="Estado de conexión en tiempo real">
+          <span class="ws-dot" id="ws-dot"></span>
+          <i class="bi bi-broadcast"></i>
+          <span id="ws-text">Conectando...</span>
+        </div>
+        <div class="header-status">
+          <span class="status-indicator"></span>
+          <span id="system-status-text">Sistema Operativo 24/7</span>
+        </div>
         <div id="user-pill" class="user-pill hidden">
+          <span id="user-role-badge" class="role-badge"></span>
           <span id="user-name-display"></span>
-          <button id="btn-logout" class="btn-sm btn-outline">Cerrar Sesión</button>
+          <button id="btn-logout" class="btn-sm btn-outline">
+            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+          </button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Banner de Modernización y Arquitectura -->
+  <!-- BANNER PRINCIPAL -->
   <section class="banner">
     <div class="container banner-inner">
-      <div class="banner-badge">CASO 2 — ARQUITECTURA STRANGLER FIG & CORTE VERTICAL</div>
+      <div class="banner-badge">CASO 2 — ARQUITECTURA STRANGLER FIG + TIEMPO REAL (WebSockets)</div>
       <h2>Evolución Digital de Trámites Municipales</h2>
-      <p>Modernización del sistema de certificados: adiós a las filas a las 5:00 a.m. y a la dependencia de un servidor físico vulnerable.</p>
+      <p>Notificaciones instantáneas. Gestión sin filas. Trazabilidad completa en tiempo real.</p>
+      <div class="banner-stats" id="banner-stats">
+        <div class="stat-chip" id="stat-total"><i class="bi bi-collection"></i> — Trámites</div>
+        <div class="stat-chip stat-green" id="stat-aprobadas"><i class="bi bi-check-circle"></i> — Aprobados</div>
+        <div class="stat-chip stat-yellow" id="stat-revision"><i class="bi bi-hourglass-split"></i> — En Revisión</div>
+        <div class="stat-chip stat-blue" id="stat-radicadas"><i class="bi bi-inbox"></i> — Radicados</div>
+      </div>
     </div>
   </section>
 
-  <!-- Contenedor Principal -->
+  <!-- CONTENEDOR PRINCIPAL -->
   <main class="container main-content">
-    
-    <!-- Pestañas de Navegación -->
-    <nav class="nav-tabs">
-      <button class="tab-btn active" data-tab="tab-radicar">📝 Radicar Trámite (HU-01)</button>
-      <button class="tab-btn" data-tab="tab-mis-tramites">📋 Mis Solicitudes</button>
-      <button class="tab-btn" data-tab="tab-consultar">🔍 Consulta por Radicado</button>
-      <button class="tab-btn" data-tab="tab-verificar">🛡️ Verificar Autenticidad QR</button>
-      <button class="tab-btn" data-tab="tab-login" id="tab-login-btn">🔐 Ingreso Ciudadano / Funcionario</button>
+
+    <!-- PESTAÑAS DE NAVEGACIÓN -->
+    <nav class="nav-tabs" id="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-radicar">
+        <i class="bi bi-file-earmark-plus"></i> Radicar Trámite
+      </button>
+      <button class="tab-btn" data-tab="tab-mis-tramites">
+        <i class="bi bi-card-list"></i> Mis Solicitudes
+      </button>
+      <button class="tab-btn" data-tab="tab-consultar">
+        <i class="bi bi-search"></i> Consultar Radicado
+      </button>
+      <button class="tab-btn" data-tab="tab-verificar">
+        <i class="bi bi-shield-check"></i> Verificar QR
+      </button>
+      <button class="tab-btn" data-tab="tab-login" id="tab-login-btn">
+        <i class="bi bi-person-lock"></i> Ingreso
+      </button>
+      <!-- Panel exclusivo funcionario (oculto hasta login) -->
+      <button class="tab-btn tab-btn-admin hidden" data-tab="tab-admin" id="tab-admin-btn">
+        <i class="bi bi-gear-wide-connected"></i> Panel Funcionario
+      </button>
     </nav>
 
-    <!-- Tab 1: Radicación de Trámite (HU-01) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TAB 1: RADICACIÓN (HU-01) -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <section id="tab-radicar" class="tab-pane active">
       <div class="card">
         <div class="card-header">
-          <h3>Radicación de Solicitud en Línea 24/7</h3>
-          <p class="subtitle">Expedición de certificados oficiales sin desplazamientos ni intermediarios.</p>
+          <div class="card-header-icon"><i class="bi bi-file-earmark-text"></i></div>
+          <div>
+            <h3>Radicación de Solicitud en Línea 24/7</h3>
+            <p class="subtitle">Expida certificados oficiales sin desplazamientos. Respuesta en tiempo real.</p>
+          </div>
         </div>
         <div class="card-body">
+          <div class="auth-required-notice hidden" id="notice-auth-radicar">
+            <i class="bi bi-lock"></i>
+            <span>Debe <a href="#" id="link-login-radicar">iniciar sesión</a> para radicar un trámite.</span>
+          </div>
           <form id="form-radicar">
             <div class="form-grid">
               <div class="form-group">
-                <label for="tipo-tramite-select">Tipo de Trámite o Certificado *</label>
+                <label for="tipo-tramite-select">
+                  <i class="bi bi-list-ul"></i> Tipo de Trámite o Certificado *
+                </label>
                 <select id="tipo-tramite-select" required class="form-input">
                   <option value="">Cargando trámites disponibles...</option>
                 </select>
+                <span class="form-hint" id="tipo-tramite-hint"></span>
               </div>
 
               <div class="form-group">
-                <label for="barrio-vereda-input">Barrio o Vereda del Predio *</label>
+                <label for="barrio-vereda-input">
+                  <i class="bi bi-geo-alt"></i> Barrio o Vereda del Predio *
+                </label>
                 <input type="text" id="barrio-vereda-input" placeholder="Ej: Barrio El Centro / Vereda La Palma" required class="form-input">
               </div>
 
               <div class="form-group full-width">
-                <label for="direccion-predio-input">Dirección Exacta del Predio *</label>
+                <label for="direccion-predio-input">
+                  <i class="bi bi-signpost-2"></i> Dirección Exacta del Predio *
+                </label>
                 <input type="text" id="direccion-predio-input" placeholder="Ej: Carrera 5 # 10 - 24" required class="form-input">
               </div>
 
               <div class="form-group full-width">
-                <label for="observaciones-input">Observaciones o Motivo de la Solicitud</label>
+                <label for="observaciones-input">
+                  <i class="bi bi-chat-left-text"></i> Observaciones o Motivo de la Solicitud
+                </label>
                 <textarea id="observaciones-input" rows="3" placeholder="Información adicional para la Secretaría de Gobierno..." class="form-input"></textarea>
               </div>
             </div>
 
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" id="btn-submit-tramite">
-                <span>🚀 Radicar Solicitud Oficialmente</span>
+                <i class="bi bi-send-fill"></i> Radicar Solicitud Oficialmente
+              </button>
+              <button type="button" class="btn btn-demo" id="btn-demo-fill">
+                <i class="bi bi-magic"></i> Llenar con datos de ejemplo
               </button>
             </div>
           </form>
           <div id="radicar-alert" class="alert hidden"></div>
+          <!-- Recibo de radicado exitoso -->
+          <div id="recibo-radicado" class="recibo hidden">
+            <div class="recibo-header">
+              <i class="bi bi-check-circle-fill"></i> Solicitud Radicada Exitosamente
+            </div>
+            <div class="recibo-body">
+              <div class="recibo-row">
+                <span><i class="bi bi-hash"></i> N° Radicado:</span>
+                <strong id="recibo-radicado-num"></strong>
+              </div>
+              <div class="recibo-row">
+                <span><i class="bi bi-qr-code"></i> Código QR:</span>
+                <strong id="recibo-qr"></strong>
+              </div>
+              <div class="recibo-row">
+                <span><i class="bi bi-file-text"></i> Trámite:</span>
+                <span id="recibo-tramite"></span>
+              </div>
+              <div class="recibo-row">
+                <span><i class="bi bi-circle-fill"></i> Estado:</span>
+                <span class="badge badge-radicada"><i class="bi bi-file-earmark-arrow-up"></i> Radicada</span>
+              </div>
+              <div class="recibo-row">
+                <span><i class="bi bi-calendar-event"></i> Fecha:</span>
+                <span id="recibo-fecha"></span>
+              </div>
+            </div>
+            <p class="recibo-footer">
+              <i class="bi bi-bell"></i>
+              Conserve su número de radicado. Recibirá notificaciones en tiempo real de cualquier cambio.
+            </p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Tab 2: Mis Solicitudes (CRUD List, Update, Soft Delete) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TAB 2: MIS SOLICITUDES -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <section id="tab-mis-tramites" class="tab-pane">
       <div class="card">
         <div class="card-header flex-between">
-          <div>
-            <h3>Gestión de Solicitudes Radicadas</h3>
-            <p class="subtitle">Seguimiento punta a punta atravesando todas las capas del sistema.</p>
+          <div class="card-header-with-icon">
+            <div class="card-header-icon"><i class="bi bi-journal-check"></i></div>
+            <div>
+              <h3>Mis Solicitudes Radicadas</h3>
+              <p class="subtitle">
+                Seguimiento en tiempo real.
+                <span class="ws-live-badge"><i class="bi bi-record-circle-fill"></i> EN VIVO</span>
+              </p>
+            </div>
           </div>
-          <button id="btn-recargar-solicitudes" class="btn btn-secondary btn-sm">🔄 Actualizar Lista</button>
+          <div class="header-actions">
+            <select id="filtro-estado" class="form-input form-input-sm">
+              <option value="">Todos los estados</option>
+              <option value="radicada"><i class="bi bi-file-earmark-arrow-up"></i> Radicadas</option>
+              <option value="en_revision">En Revisión</option>
+              <option value="aprobada">Aprobadas</option>
+              <option value="rechazada">Rechazadas</option>
+            </select>
+            <button id="btn-recargar-solicitudes" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-clockwise"></i> Actualizar
+            </button>
+          </div>
         </div>
         <div class="card-body">
           <div class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Radicado</th>
-                  <th>Trámite</th>
-                  <th>Predio</th>
-                  <th>Fecha Radicación</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th><i class="bi bi-hash"></i> Radicado</th>
+                  <th><i class="bi bi-file-text"></i> Trámite</th>
+                  <th><i class="bi bi-house"></i> Predio</th>
+                  <th><i class="bi bi-calendar3"></i> Fecha</th>
+                  <th><i class="bi bi-circle-half"></i> Estado</th>
+                  <th><i class="bi bi-tools"></i> Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla-solicitudes-body">
-                <tr><td colspan="6" class="text-center py-4">Inicia sesión para ver tus trámites radicados.</td></tr>
+                <tr><td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-person-lock"></i> Inicia sesión para ver tus trámites.
+                </td></tr>
               </tbody>
             </table>
           </div>
@@ -126,90 +236,118 @@
       </div>
     </section>
 
-    <!-- Tab 3: Consulta por Radicado (Seguimiento 24/7 sin filas) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TAB 3: CONSULTA PÚBLICA POR RADICADO -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <section id="tab-consultar" class="tab-pane">
       <div class="card">
         <div class="card-header">
-          <h3>Consulta y Seguimiento de Trámite en Tiempo Real (RF-05)</h3>
-          <p class="subtitle">Consulta pública mediante código de radicado sin necesidad de madrugar a la ventanilla.</p>
+          <div class="card-header-icon"><i class="bi bi-binoculars"></i></div>
+          <div>
+            <h3>Consulta y Seguimiento de Trámite (RF-05)</h3>
+            <p class="subtitle">Consulta pública sin autenticación mediante código de radicado. Sin filas, sin horarios.</p>
+          </div>
         </div>
         <div class="card-body">
           <div class="search-bar">
             <input type="text" id="input-buscar-radicado" placeholder="Ej: RAD-2026-12345" class="form-input">
-            <button id="btn-buscar-radicado" class="btn btn-primary">Buscar Radicado</button>
+            <button id="btn-buscar-radicado" class="btn btn-primary">
+              <i class="bi bi-search"></i> Consultar
+            </button>
           </div>
           <div id="resultado-radicado" class="search-result-box hidden"></div>
         </div>
       </div>
     </section>
 
-    <!-- Tab 4: Verificación QR (RF-06) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TAB 4: VERIFICACIÓN QR -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <section id="tab-verificar" class="tab-pane">
       <div class="card">
         <div class="card-header">
-          <h3>Módulo de Validación Digital de Certificados (RF-06)</h3>
-          <p class="subtitle">Comprobación de autenticidad inalterable y firma electrónica institucional.</p>
+          <div class="card-header-icon"><i class="bi bi-patch-check"></i></div>
+          <div>
+            <h3>Validación Digital de Certificados (RF-06)</h3>
+            <p class="subtitle">Comprobación de autenticidad con hash SHA-256 y firma electrónica institucional.</p>
+          </div>
         </div>
         <div class="card-body">
           <div class="search-bar">
-            <input type="text" id="input-buscar-qr" placeholder="Ingrese o escanee el Código QR (ej: QR-ALCALDIA-XXXX)" class="form-input">
-            <button id="btn-buscar-qr" class="btn btn-primary">Verificar Autenticidad</button>
+            <input type="text" id="input-buscar-qr" placeholder="Ingrese el Código QR (ej: QR-ALCALDIA-XXXXXXXXXXXXXXXX)" class="form-input">
+            <button id="btn-buscar-qr" class="btn btn-primary">
+              <i class="bi bi-shield-check"></i> Verificar
+            </button>
           </div>
           <div id="resultado-qr" class="search-result-box hidden"></div>
         </div>
       </div>
     </section>
 
-    <!-- Tab 5: Login / Registro -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TAB 5: LOGIN / REGISTRO -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <section id="tab-login" class="tab-pane">
       <div class="grid-2-cols">
-        <!-- Tarjeta Login -->
         <div class="card">
           <div class="card-header">
-            <h3>Iniciar Sesión</h3>
-            <p class="subtitle">Acceso mediante autenticación segura JWT (AC-01 / AC-02)</p>
+            <div class="card-header-icon"><i class="bi bi-person-lock"></i></div>
+            <div>
+              <h3>Iniciar Sesión</h3>
+              <p class="subtitle">Autenticación segura con JWT (AC-01 / AC-02)</p>
+            </div>
           </div>
           <div class="card-body">
+            <div class="demo-credentials">
+              <i class="bi bi-lightbulb-fill"></i> <strong>Cuenta Demo Funcionario:</strong><br>
+              <code>funcionario@alcaldia.gov.co</code> / <code>Alcaldia2026*</code>
+            </div>
             <form id="form-login">
               <div class="form-group">
-                <label>Correo Electrónico</label>
+                <label><i class="bi bi-envelope"></i> Correo Electrónico</label>
                 <input type="email" id="login-email" required placeholder="correo@ejemplo.com" class="form-input">
               </div>
               <div class="form-group">
-                <label>Contraseña</label>
+                <label><i class="bi bi-key"></i> Contraseña</label>
                 <input type="password" id="login-password" required placeholder="••••••••" class="form-input">
               </div>
-              <button type="submit" class="btn btn-primary btn-block">Ingresar al Sistema</button>
+              <button type="submit" class="btn btn-primary btn-block" id="btn-login">
+                <i class="bi bi-door-open"></i> Ingresar al Sistema
+              </button>
             </form>
             <div id="login-alert" class="alert hidden"></div>
           </div>
         </div>
 
-        <!-- Tarjeta Registro -->
         <div class="card">
           <div class="card-header">
-            <h3>Registro de Nuevo Ciudadano</h3>
-            <p class="subtitle">Crea tu cuenta ciudadana para radicar y gestionar certificados.</p>
+            <div class="card-header-icon"><i class="bi bi-person-plus"></i></div>
+            <div>
+              <h3>Registro de Ciudadano</h3>
+              <p class="subtitle">Crea tu cuenta para radicar y gestionar certificados en línea.</p>
+            </div>
           </div>
           <div class="card-body">
             <form id="form-registro">
               <div class="form-group">
-                <label>Nombre Completo *</label>
+                <label><i class="bi bi-person-badge"></i> Nombre Completo *</label>
                 <input type="text" id="reg-nombre" required placeholder="Nombres y Apellidos" class="form-input">
               </div>
               <div class="form-group">
-                <label>Cédula de Ciudadanía *</label>
+                <label><i class="bi bi-credit-card-2-front"></i> Cédula de Ciudadanía *</label>
                 <input type="text" id="reg-documento" required placeholder="Número de documento" class="form-input">
               </div>
               <div class="form-group">
-                <label>Correo Electrónico *</label>
+                <label><i class="bi bi-envelope-at"></i> Correo Electrónico *</label>
                 <input type="email" id="reg-email" required placeholder="correo@ejemplo.com" class="form-input">
               </div>
               <div class="form-group">
-                <label>Contraseña *</label>
+                <label><i class="bi bi-lock"></i> Contraseña *</label>
                 <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres" class="form-input">
               </div>
-              <button type="submit" class="btn btn-secondary btn-block">Registrarse como Ciudadano</button>
+              <button type="submit" class="btn btn-secondary btn-block">
+                <i class="bi bi-person-check"></i> Registrarse como Ciudadano
+              </button>
             </form>
             <div id="reg-alert" class="alert hidden"></div>
           </div>
@@ -217,21 +355,160 @@
       </div>
     </section>
 
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TAB 6: PANEL DE FUNCIONARIO (solo funcionarios) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="tab-admin" class="tab-pane">
+      <!-- Dashboard de Métricas -->
+      <div class="dashboard-grid">
+        <div class="metric-card metric-blue">
+          <div class="metric-icon"><i class="bi bi-inbox-fill"></i></div>
+          <div class="metric-value" id="metric-total">—</div>
+          <div class="metric-label">Total Solicitudes</div>
+        </div>
+        <div class="metric-card metric-yellow">
+          <div class="metric-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+          <div class="metric-value" id="metric-radicadas">—</div>
+          <div class="metric-label">Radicadas (Pendientes)</div>
+        </div>
+        <div class="metric-card metric-orange">
+          <div class="metric-icon"><i class="bi bi-hourglass-split"></i></div>
+          <div class="metric-value" id="metric-revision">—</div>
+          <div class="metric-label">En Revisión</div>
+        </div>
+        <div class="metric-card metric-green">
+          <div class="metric-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="metric-value" id="metric-aprobadas">—</div>
+          <div class="metric-label">Aprobadas</div>
+        </div>
+        <div class="metric-card metric-red">
+          <div class="metric-icon"><i class="bi bi-x-circle-fill"></i></div>
+          <div class="metric-value" id="metric-rechazadas">—</div>
+          <div class="metric-label">Rechazadas</div>
+        </div>
+      </div>
+
+      <!-- Feed de Actividad en Tiempo Real -->
+      <div class="card mt-4">
+        <div class="card-header flex-between">
+          <div class="card-header-with-icon">
+            <div class="card-header-icon"><i class="bi bi-activity"></i></div>
+            <div>
+              <h3>Actividad en Tiempo Real</h3>
+              <p class="subtitle">
+                <span class="ws-live-badge"><i class="bi bi-record-circle-fill"></i> EN VIVO</span>
+                — Notificaciones instantáneas vía WebSocket
+              </p>
+            </div>
+          </div>
+          <button id="btn-limpiar-feed" class="btn btn-secondary btn-sm">
+            <i class="bi bi-trash3"></i> Limpiar
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div id="activity-feed" class="activity-feed">
+            <div class="feed-empty">
+              <i class="bi bi-broadcast" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4"></i>
+              Esperando actividad en tiempo real...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gestión de Todas las Solicitudes -->
+      <div class="card mt-4">
+        <div class="card-header flex-between">
+          <div class="card-header-with-icon">
+            <div class="card-header-icon"><i class="bi bi-sliders2"></i></div>
+            <div>
+              <h3>Gestión Administrativa de Solicitudes</h3>
+              <p class="subtitle">Aprobar, rechazar o poner en revisión cualquier solicitud ciudadana.</p>
+            </div>
+          </div>
+          <button id="btn-recargar-admin" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th><i class="bi bi-hash"></i> Radicado</th>
+                  <th><i class="bi bi-person"></i> Ciudadano</th>
+                  <th><i class="bi bi-file-text"></i> Trámite</th>
+                  <th><i class="bi bi-house"></i> Predio</th>
+                  <th><i class="bi bi-calendar3"></i> Fecha</th>
+                  <th><i class="bi bi-circle-half"></i> Estado</th>
+                  <th><i class="bi bi-pencil-square"></i> Gestionar</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-admin-body">
+                <tr><td colspan="7" class="text-center py-4 text-muted">
+                  <i class="bi bi-hourglass"></i> Cargando solicitudes...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <!-- Pie de página institucional -->
+  <!-- PIE DE PÁGINA -->
   <footer class="footer">
     <div class="container footer-content">
       <div>
-        <p><strong>Alcaldía Municipal</strong> — Secretaría de Gobierno</p>
-        <p class="text-muted">Arquitectura de Software: Caso 2 | arc42 + C4 Model + Vertical Slice</p>
+        <p><i class="bi bi-bank2"></i> <strong>Alcaldía Municipal</strong> — Secretaría de Gobierno</p>
+        <p class="text-muted">
+          <i class="bi bi-diagram-3"></i> Arquitectura de Software: arc42 + C4 Model + Vertical Slice + WebSockets
+        </p>
       </div>
       <div class="text-right">
-        <p class="badge-tag">Versión 1.0.0 (Strangler Fig Fase 1)</p>
+        <p class="badge-tag"><i class="bi bi-tag"></i> Versión 2.0.0 (Strangler Fig — Tiempo Real)</p>
+        <p class="text-muted" id="footer-uptime"></p>
       </div>
     </div>
   </footer>
 
+  <!-- Modal de Cambio de Estado (Funcionario) -->
+  <div id="modal-estado" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4><i class="bi bi-pencil-square"></i> Gestionar Solicitud</h4>
+        <button id="modal-close" class="modal-close-btn"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2"><i class="bi bi-hash"></i> Radicado: <strong id="modal-radicado-text"></strong></p>
+        <p class="mb-2"><i class="bi bi-person"></i> Ciudadano: <strong id="modal-ciudadano-text"></strong></p>
+        <p class="mb-3"><i class="bi bi-circle-half"></i> Estado actual: <span id="modal-estado-actual"></span></p>
+        <div class="form-group">
+          <label><i class="bi bi-arrow-repeat"></i> Nuevo Estado *</label>
+          <select id="modal-nuevo-estado" class="form-input">
+            <option value="en_revision">Poner en Revisión</option>
+            <option value="aprobada">Aprobar Solicitud</option>
+            <option value="rechazada">Rechazar Solicitud</option>
+          </select>
+        </div>
+        <div class="form-group" id="motivo-rechazo-group" style="display:none">
+          <label><i class="bi bi-exclamation-triangle"></i> Motivo de Rechazo *</label>
+          <textarea id="modal-motivo-rechazo" class="form-input" rows="2" placeholder="Indique el motivo del rechazo..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-cancel-btn" class="btn btn-secondary">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+        <button id="modal-confirm-btn" class="btn btn-primary">
+          <i class="bi bi-check2-circle"></i> Confirmar Cambio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

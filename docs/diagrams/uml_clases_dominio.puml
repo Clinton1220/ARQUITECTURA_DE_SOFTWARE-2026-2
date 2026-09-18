@@ -1,0 +1,69 @@
+@startuml UML_Clases_Dominio
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam packageStyle rectangle
+
+title Vista de Dominio / Objetos — Diagrama de Clases UML (Modelo de Datos / ORM)
+
+class Usuario << (E,#FFAAAA) Entity >> {
+    + id : Integer <<PK>>
+    + nombre : String(120)
+    + documentoIdentidad : String(30) <<UK>>
+    + email : String(160) <<UK>>
+    + passwordHash : String(255)
+    + rol : Enum('ciudadano', 'funcionario', 'admin')
+    + telefono : String(30)
+    + activo : Boolean = true
+    + createdAt : DateTime
+    + updatedAt : DateTime
+    --
+    + validarPassword(password: String) : Boolean
+}
+
+class TipoTramite << (E,#FFAAAA) Entity >> {
+    + id : Integer <<PK>>
+    + codigo : String(30) <<UK>>
+    + nombre : String(120)
+    + descripcion : Text
+    + costo : Decimal(10,2) >= 0
+    + vigenciaDias : Integer >= 1
+    + activo : Boolean = true
+    + createdAt : DateTime
+    + updatedAt : DateTime
+}
+
+class SolicitudTramite << (E,#FFAAAA) Entity >> {
+    + id : Integer <<PK>>
+    + radicado : String(35) <<UK>>
+    + usuarioId : Integer <<FK>>
+    + tipoTramiteId : Integer <<FK>>
+    + direccionPredio : String(180)
+    + barrioVereda : String(100)
+    + observaciones : Text
+    + estado : Enum('radicada', 'en_revision', 'aprobada', 'rechazada', 'cancelada')
+    + motivoRechazo : Text
+    + codigoVerificacionQr : String(100) <<UK>>
+    + hashDocumento : String(64)
+    + activo : Boolean = true
+    + createdAt : DateTime
+    + updatedAt : DateTime
+}
+
+class AuditoriaTramite << (E,#FFAAAA) Entity >> {
+    + id : Integer <<PK>>
+    + solicitudId : Integer <<FK>>
+    + usuarioId : Integer <<FK>>
+    + accion : String(50)
+    + estadoAnterior : String(25)
+    + estadoNuevo : String(25)
+    + detalle : Text
+    + ipOrigen : String(45)
+    + createdAt : DateTime
+}
+
+Usuario "1" -- "0..*" SolicitudTramite : radica >
+TipoTramite "1" -- "0..*" SolicitudTramite : clasifica >
+SolicitudTramite "1" -- "0..*" AuditoriaTramite : registra historial >
+Usuario "1" -- "0..*" AuditoriaTramite : ejecuta acción >
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml C4_Nivel1_Contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contexto (C4 Nivel 1) - Sistema de Trámites y Certificados Municipales
+
+Person(ciudadano, "Ciudadano", "Habitante del municipio que solicita certificados oficiales (residencia, paz y salvo) y consulta su estado 24/7.")
+Person(funcionario, "Funcionario de Gobierno", "Servidor público de la Secretaría de Gobierno que revisa, aprueba o rechaza solicitudes.")
+Person(personeria, "Personería / Entes de Control", "Organismo de control que audita tiempos de atención, quejas y trazabilidad inmutable.")
+
+System(sistema_tramites, "Sistema de Trámites y Certificados", "Plataforma web municipal que gestiona el ciclo de vida de certificados oficiales, radicación 24/7, validación digital QR y trazabilidad.")
+
+System_Ext(sistema_2009, "Sistema Monolítico de 2009 (Legado)", "Software de escritorio heredado bajo el escritorio del secretario; se mantiene durante la transición para consulta histórica.")
+System_Ext(servicio_correo, "Servicio de Notificaciones (SMTP)", "Envía alertas por correo electrónico sobre el estado del radicado y emisión de certificados.")
+
+Rel(ciudadano, sistema_tramites, "Radica solicitudes y consulta estado 24/7", "HTTPS / Web")
+Rel(funcionario, sistema_tramites, "Revisa y aprueba solicitudes de trámite", "HTTPS / Web")
+Rel(personeria, sistema_tramites, "Audita bitácora de solicitudes y tiempos de respuesta", "HTTPS / Informes")
+Rel(sistema_tramites, servicio_correo, "Envía notificaciones de radicación y aprobación", "SMTP / TLS")
+Rel(sistema_tramites, sistema_2009, "Sincroniza y consulta datos históricos durante migración (Strangler Fig)", "ODBC / Vistas BD")
+
+@enduml

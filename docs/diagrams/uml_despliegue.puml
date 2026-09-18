@@ -1,0 +1,53 @@
+@startuml UML_Despliegue
+skinparam componentStyle uml2
+
+title Vista de Despliegue Físico — Diagrama UML de Nodos y Contenedores
+
+node "Dispositivo de Usuario / Ciudadano" as client_node {
+    node "Navegador Web (Chrome, Firefox, Edge, Safari)" as browser_node {
+        artifact "Portal Web Ciudadano\n(HTML5, CSS3, JS Vanilla)" as web_app
+    }
+}
+
+node "Servidor de Aplicación / Host Docker" as host_node {
+    
+    node "Docker Engine (Red: red-alcaldia)" as docker_engine {
+        
+        node "Contenedor: app-backend (Node.js 20 LTS)" as backend_container {
+            artifact "API REST Express\n(alcaldia-tramites-backend)" as backend_artifact
+            note right of backend_artifact
+                Variables de entorno:
+                - PORT (3000)
+                - NODE_ENV (production)
+                - DB_HOST (db)
+                - DB_PORT (5432)
+                - DB_NAME
+                - DB_USER
+                - DB_PASSWORD [secreto]
+                - JWT_SECRET [secreto]
+                - JWT_EXPIRES_IN
+                - BCRYPT_SALT_ROUNDS
+            end note
+        }
+        
+        node "Contenedor: db (PostgreSQL 16 Alpine)" as db_container {
+            artifact "Servicio PostgreSQL 16" as db_artifact
+            database "Base de Datos:\nalcaldia_tramites" as db_instance
+            note right of db_instance
+                Variables de entorno:
+                - POSTGRES_DB
+                - POSTGRES_USER
+                - POSTGRES_PASSWORD [secreto]
+            end note
+        }
+        
+        storage "Volumen Persistente: pgdata" as pgdata_volume
+    }
+}
+
+web_app -- backend_artifact : HTTP / HTTPS\nPuerto 3000 (Externa)
+backend_artifact -- db_artifact : TCP / SQL Wire Protocol\nPuerto 5432 (Interna)
+db_artifact ..> db_instance : Gestiona
+db_instance -- pgdata_volume : Persiste en disco
+
+@enduml

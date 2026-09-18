@@ -1,0 +1,27 @@
+@startuml C4_Nivel2_Contenedores
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contenedores (C4 Nivel 2) - Sistema de Trámites y Certificados
+
+Person(ciudadano, "Ciudadano", "Usuario externo que radica y consulta trámites.")
+Person(funcionario, "Funcionario Municipal", "Operador de la Secretaría de Gobierno.")
+
+System_Boundary(c1, "Sistema de Trámites y Certificados") {
+    Container(frontend, "Portal Web Ciudadano", "HTML5, CSS3, JavaScript Vanilla (SPA)", "Interfaz responsiva para radicación de trámites 24/7, consulta por radicado y verificación de código QR.")
+    Container(api_backend, "API Backend (N-Capas)", "Node.js 20 LTS, Express 4.x", "Expone API REST con autenticación JWT, validaciones de negocio, auditoría y orquestación del CRUD.")
+    ContainerDb(db_postgres, "Base de Datos Relacional", "PostgreSQL 16", "Almacena usuarios, tipos de trámites, solicitudes con radicado único, códigos QR y bitácora de auditoría inmutable.")
+}
+
+System_Ext(sistema_2009, "Aplicación de Escritorio 2009", "Software heredado cliente-servidor para validación interna durante Fase 1.")
+System_Ext(servicio_correo, "Servidor SMTP Externo", "Envío de correos de confirmación.")
+
+Rel(ciudadano, frontend, "Accede a través del navegador web", "HTTPS / Puerto 443")
+Rel(funcionario, frontend, "Gestiona y aprueba trámites", "HTTPS / Puerto 443")
+Rel(frontend, api_backend, "Consume endpoints REST con tokens JWT", "JSON / HTTPS / Puerto 3000")
+Rel(api_backend, db_postgres, "Persistencia relacional mediante Sequelize ORM", "TCP / Puerto 5432")
+Rel(api_backend, servicio_correo, "Envía notificaciones transaccionales", "SMTP / Puerto 587")
+Rel(api_backend, sistema_2009, "Sincronización bidireccional de estados (Fase 1)", "Conexión BD compartida")
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml UML_Secuencia_HU01
+autonumber
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+
+actor "Ciudadano" as user
+boundary "Vista / Web\n(Portal HTML/JS)" as view
+control "Router\n(Express)" as router
+control "Middleware Auth\n(JWT)" as mw
+control "SolicitudController\n(Negocio)" as ctrl
+entity "SolicitudTramite\n(Sequelize)" as model
+entity "AuditoriaTramite\n(Sequelize)" as audit
+database "PostgreSQL 16\n(Persistencia)" as db
+
+title Vista Dinámica — Diagrama de Secuencia UML: HU-01 "Radicar Solicitud de Certificado 24/7"
+
+user -> view : Diligencia formulario de radicación y presiona "Radicar"
+view -> router : POST /api/solicitudes (payload JSON + Header Authorization)
+
+router -> mw : authMiddleware(req, res, next)
+
+alt Token ausente o inválido (Flujo Alterno 1: AC-01 Seguridad)
+    mw --> view : HTTP 401 Unauthorized { error: 'Token JWT ausente o inválido' }
+    view --> user : Muestra alerta: "Debe iniciar sesión para radicar trámites"
+else Token válido (Camino hacia negocio)
+    mw -> ctrl : crear(req, res, next)
+    
+    ctrl -> model : findOne({ where: { predio, tipoTramite, activo: true } })
+    model -> db : SELECT * FROM solicitudes_tramite WHERE ...
+    db --> model : Registro existente o null
+    
+    alt Solicitud duplicada activa (Flujo Alterno 2: Validación de Negocio)
+        ctrl --> view : HTTP 409 Conflict { error: 'Ya existe solicitud activa para este predio' }
+        view --> user : Muestra advertencia: "Predio ya cuenta con trámite en curso"
+    else Datos válidos y sin conflicto (Camino Feliz)
+        ctrl -> ctrl : Generar radicado (RAD-2026-XXXXX) y hash QR
+        
+        ctrl -> model : create({ radicado, usuarioId, predio, activo: true, ... })
+        model -> db : INSERT INTO solicitudes_tramite (...) VALUES (...)
+        db --> model : Retorna ID generado y timestamps
+        
+        ctrl -> audit : create({ solicitudId, accion: 'RADICACION', ... })
+        audit -> db : INSERT INTO auditoria_tramites (...)
+        db --> audit : Ok (Persistencia inmutable)
+        
+        ctrl --> view : HTTP 201 Created { solicitud: { radicado, estado: 'radicada', ... } }
+        view --> user : Muestra confirmación en pantalla con número de radicado oficial
+    end
+end
+
+@enduml

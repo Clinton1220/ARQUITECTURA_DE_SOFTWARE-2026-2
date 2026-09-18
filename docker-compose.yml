@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app-backend:
+    build: .
+    container_name: alcaldia-tramites-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DB_DIALECT=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=alcaldia_tramites
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres_secure_pass
+      - JWT_SECRET=alcaldia_secret_jwt_token_2026_secure
+      - JWT_EXPIRES_IN=8h
+      - BCRYPT_SALT_ROUNDS=10
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red-alcaldia
+
+  db:
+    image: postgres:16-alpine
+    container_name: alcaldia-tramites-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=alcaldia_tramites
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_secure_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations/001_esquema_inicial.sql:/docker-entrypoint-initdb.d/001_esquema_inicial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d alcaldia_tramites"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - red-alcaldia
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  red-alcaldia:
+    driver: bridge

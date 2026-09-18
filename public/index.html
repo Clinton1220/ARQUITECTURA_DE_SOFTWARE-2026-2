@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Trámites y Certificados 24/7 - Alcaldía Municipal</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Encabezado Institucional -->
+  <header class="header">
+    <div class="container header-container">
+      <div class="brand">
+        <div class="brand-badge">🏛️ GOV.CO</div>
+        <div class="brand-titles">
+          <h1>Alcaldía Municipal</h1>
+          <p>Secretaría de Gobierno — Trámites y Certificados en Línea 24/7</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-indicator"></span>
+        <span id="system-status-text">Sistema Operativo 24/7</span>
+        <div id="user-pill" class="user-pill hidden">
+          <span id="user-name-display"></span>
+          <button id="btn-logout" class="btn-sm btn-outline">Cerrar Sesión</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Banner de Modernización y Arquitectura -->
+  <section class="banner">
+    <div class="container banner-inner">
+      <div class="banner-badge">CASO 2 — ARQUITECTURA STRANGLER FIG & CORTE VERTICAL</div>
+      <h2>Evolución Digital de Trámites Municipales</h2>
+      <p>Modernización del sistema de certificados: adiós a las filas a las 5:00 a.m. y a la dependencia de un servidor físico vulnerable.</p>
+    </div>
+  </section>
+
+  <!-- Contenedor Principal -->
+  <main class="container main-content">
+    
+    <!-- Pestañas de Navegación -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-radicar">📝 Radicar Trámite (HU-01)</button>
+      <button class="tab-btn" data-tab="tab-mis-tramites">📋 Mis Solicitudes</button>
+      <button class="tab-btn" data-tab="tab-consultar">🔍 Consulta por Radicado</button>
+      <button class="tab-btn" data-tab="tab-verificar">🛡️ Verificar Autenticidad QR</button>
+      <button class="tab-btn" data-tab="tab-login" id="tab-login-btn">🔐 Ingreso Ciudadano / Funcionario</button>
+    </nav>
+
+    <!-- Tab 1: Radicación de Trámite (HU-01) -->
+    <section id="tab-radicar" class="tab-pane active">
+      <div class="card">
+        <div class="card-header">
+          <h3>Radicación de Solicitud en Línea 24/7</h3>
+          <p class="subtitle">Expedición de certificados oficiales sin desplazamientos ni intermediarios.</p>
+        </div>
+        <div class="card-body">
+          <form id="form-radicar">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="tipo-tramite-select">Tipo de Trámite o Certificado *</label>
+                <select id="tipo-tramite-select" required class="form-input">
+                  <option value="">Cargando trámites disponibles...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="barrio-vereda-input">Barrio o Vereda del Predio *</label>
+                <input type="text" id="barrio-vereda-input" placeholder="Ej: Barrio El Centro / Vereda La Palma" required class="form-input">
+              </div>
+
+              <div class="form-group full-width">
+                <label for="direccion-predio-input">Dirección Exacta del Predio *</label>
+                <input type="text" id="direccion-predio-input" placeholder="Ej: Carrera 5 # 10 - 24" required class="form-input">
+              </div>
+
+              <div class="form-group full-width">
+                <label for="observaciones-input">Observaciones o Motivo de la Solicitud</label>
+                <textarea id="observaciones-input" rows="3" placeholder="Información adicional para la Secretaría de Gobierno..." class="form-input"></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-submit-tramite">
+                <span>🚀 Radicar Solicitud Oficialmente</span>
+              </button>
+            </div>
+          </form>
+          <div id="radicar-alert" class="alert hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Mis Solicitudes (CRUD List, Update, Soft Delete) -->
+    <section id="tab-mis-tramites" class="tab-pane">
+      <div class="card">
+        <div class="card-header flex-between">
+          <div>
+            <h3>Gestión de Solicitudes Radicadas</h3>
+            <p class="subtitle">Seguimiento punta a punta atravesando todas las capas del sistema.</p>
+          </div>
+          <button id="btn-recargar-solicitudes" class="btn btn-secondary btn-sm">🔄 Actualizar Lista</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Radicado</th>
+                  <th>Trámite</th>
+                  <th>Predio</th>
+                  <th>Fecha Radicación</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-solicitudes-body">
+                <tr><td colspan="6" class="text-center py-4">Inicia sesión para ver tus trámites radicados.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Consulta por Radicado (Seguimiento 24/7 sin filas) -->
+    <section id="tab-consultar" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h3>Consulta y Seguimiento de Trámite en Tiempo Real (RF-05)</h3>
+          <p class="subtitle">Consulta pública mediante código de radicado sin necesidad de madrugar a la ventanilla.</p>
+        </div>
+        <div class="card-body">
+          <div class="search-bar">
+            <input type="text" id="input-buscar-radicado" placeholder="Ej: RAD-2026-12345" class="form-input">
+            <button id="btn-buscar-radicado" class="btn btn-primary">Buscar Radicado</button>
+          </div>
+          <div id="resultado-radicado" class="search-result-box hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Verificación QR (RF-06) -->
+    <section id="tab-verificar" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h3>Módulo de Validación Digital de Certificados (RF-06)</h3>
+          <p class="subtitle">Comprobación de autenticidad inalterable y firma electrónica institucional.</p>
+        </div>
+        <div class="card-body">
+          <div class="search-bar">
+            <input type="text" id="input-buscar-qr" placeholder="Ingrese o escanee el Código QR (ej: QR-ALCALDIA-XXXX)" class="form-input">
+            <button id="btn-buscar-qr" class="btn btn-primary">Verificar Autenticidad</button>
+          </div>
+          <div id="resultado-qr" class="search-result-box hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Login / Registro -->
+    <section id="tab-login" class="tab-pane">
+      <div class="grid-2-cols">
+        <!-- Tarjeta Login -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Iniciar Sesión</h3>
+            <p class="subtitle">Acceso mediante autenticación segura JWT (AC-01 / AC-02)</p>
+          </div>
+          <div class="card-body">
+            <form id="form-login">
+              <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="login-email" required placeholder="correo@ejemplo.com" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="login-password" required placeholder="••••••••" class="form-input">
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Ingresar al Sistema</button>
+            </form>
+            <div id="login-alert" class="alert hidden"></div>
+          </div>
+        </div>
+
+        <!-- Tarjeta Registro -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Registro de Nuevo Ciudadano</h3>
+            <p class="subtitle">Crea tu cuenta ciudadana para radicar y gestionar certificados.</p>
+          </div>
+          <div class="card-body">
+            <form id="form-registro">
+              <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="reg-nombre" required placeholder="Nombres y Apellidos" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Cédula de Ciudadanía *</label>
+                <input type="text" id="reg-documento" required placeholder="Número de documento" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Correo Electrónico *</label>
+                <input type="email" id="reg-email" required placeholder="correo@ejemplo.com" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Contraseña *</label>
+                <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres" class="form-input">
+              </div>
+              <button type="submit" class="btn btn-secondary btn-block">Registrarse como Ciudadano</button>
+            </form>
+            <div id="reg-alert" class="alert hidden"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Pie de página institucional -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <p><strong>Alcaldía Municipal</strong> — Secretaría de Gobierno</p>
+        <p class="text-muted">Arquitectura de Software: Caso 2 | arc42 + C4 Model + Vertical Slice</p>
+      </div>
+      <div class="text-right">
+        <p class="badge-tag">Versión 1.0.0 (Strangler Fig Fase 1)</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

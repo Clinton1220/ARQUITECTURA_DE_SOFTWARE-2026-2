@@ -101,40 +101,7 @@ Se selecciona una arquitectura estructurada en **N-Capas** (Presentación / Enru
 
 Muestra el sistema como una caja negra, identificando los actores humanos, sistemas externos colaboradores y los protocolos de comunicación.
 
-![Diagrama de Contexto C4 Nivel 1](diagrams/c4_nivel1_contexto.svg)
-
-```mermaid
-graph TD
-    subgraph Actores
-        C[fa:fa-user Ciudadano<br>Solicita certificados y consulta estado 24/7]
-        F[fa:fa-user-tie Funcionario de Gobierno<br>Revisa y aprueba trámites]
-        P[fa:fa-landmark Personería / Control<br>Audita tiempos y trazabilidad inmutable]
-    end
-
-    subgraph Frontera del Sistema
-        SYS[Sistema de Trámites y Certificados<br>«Sistema de Software Municipal»<br>Gestiona radicación 24/7, emisión digital y validación QR]
-    end
-
-    subgraph Sistemas Externos
-        LEG[Sistema Monolítico 2009<br>«Sistema Legado»<br>Consulta histórica y soporte en transición]
-        SMTP[Servicio de Correo SMTP<br>«Sistema Externo»<br>Envío de alertas y comprobantes]
-    end
-
-    C -->|HTTPS / Web| SYS
-    F -->|HTTPS / Web| SYS
-    P -->|HTTPS / Auditoría| SYS
-    SYS -->|SMTP / TLS| SMTP
-    SYS -.->|Vistas BD / Strangler Fig| LEG
-
-    classDef system fill:#003366,stroke:#002244,stroke-width:2px,color:#fff;
-    classDef person fill:#00897b,stroke:#00695c,stroke-width:2px,color:#fff;
-    classDef external fill:#64748b,stroke:#475569,stroke-width:2px,color:#fff;
-    class SYS system;
-    class C,F,P person;
-    class LEG,SMTP external;
-```
-
-*Fuente PlantUML disponible en:* `docs/diagrams/c4_nivel1_contexto.puml`
+![Diagrama de Contexto C4 Nivel 1](diagrams/c4_nivel1_contexto.png)
 
 > **Leyenda:** Nodos verdes representan actores humanos; nodo azul oscuro representa el sistema municipal a diseñar; nodos grises representan sistemas externos.  
 > **Párrafo de lectura (30 segundos):** El Sistema de Trámites y Certificados actúa como punto único de contacto digital 24/7 para el Ciudadano (quien radica y consulta sin filas), el Funcionario (quien valida y aprueba) y la Personería (que vigila la gestión). Se conecta vía HTTPS, envía notificaciones por SMTP y se articula temporalmente con la base de datos del sistema legado de 2009 bajo la estrategia de modernización Strangler Fig.
@@ -145,39 +112,7 @@ graph TD
 
 Abre la caja negra del sistema, mostrando las aplicaciones ejecutables, almacenes de datos y protocolos de comunicación.
 
-![Diagrama de Contenedores C4 Nivel 2](diagrams/c4_nivel2_contenedores.svg)
-
-```mermaid
-graph TD
-    subgraph Dispositivo Usuario
-        BROWSER[Portal Web Ciudadano<br>«Contenedor: Web SPA»<br>HTML5, CSS3, JS Vanilla<br>Interfaz responsiva para radicación y validación QR]
-    end
-
-    subgraph Host Servidor / Docker
-        API[API Backend REST<br>«Contenedor: Node.js / Express»<br>Lógica de negocio, autenticación JWT,<br>validación de reglas y control de concurrencia]
-        
-        DB[(Base de Datos Relacional<br>«Contenedor: PostgreSQL 16»<br>Persistencia ACID de usuarios, trámites,<br>solicitudes y bitácora de auditoría)]
-    end
-
-    subgraph Externo
-        SMTP_EXT[Servidor SMTP Externo<br>Notificaciones transaccionales]
-    end
-
-    BROWSER -->|JSON / HTTPS / Puerto 3000| API
-    API -->|Sequelize ORM / TCP / Puerto 5432| DB
-    API -->|SMTP / Puerto 587| SMTP_EXT
-
-    classDef container fill:#003366,stroke:#002244,stroke-width:2px,color:#fff;
-    classDef db fill:#00897b,stroke:#00695c,stroke-width:2px,color:#fff;
-    classDef client fill:#0284c7,stroke:#0369a1,stroke-width:2px,color:#fff;
-    classDef ext fill:#64748b,stroke:#475569,stroke-width:2px,color:#fff;
-    class API container;
-    class DB db;
-    class BROWSER client;
-    class SMTP_EXT ext;
-```
-
-*Fuente PlantUML disponible en:* `docs/diagrams/c4_nivel2_contenedores.puml`
+![Diagrama de Contenedores C4 Nivel 2](diagrams/c4_nivel2_contenedores.png)
 
 > **Leyenda:** Nodos celestes representan interfaces cliente; azul oscuro el backend contenedorizado; verde esmeralda la base de datos relacional; gris servicios externos.  
 > **Párrafo de lectura (30 segundos):** El usuario interactúa con el Portal Web Ciudadano, el cual envía peticiones asíncronas REST/JSON protegidas con JWT hacia la API Backend en Node.js/Express (puerto 3000). Esta procesa las reglas de negocio y persiste los datos mediante el ORM Sequelize en PostgreSQL 16 (puerto 5432) garantizando transacciones ACID.
@@ -188,72 +123,7 @@ graph TD
 
 Modelo de datos relacional implementado en el ORM con tipos de datos, llaves primarias, llaves foráneas, restricciones de unicidad y multiplicidades.
 
-![Diagrama de Clases UML](diagrams/uml_clases_dominio.svg)
-
-```mermaid
-classDiagram
-    class Usuario {
-        +Integer id PK
-        +String nombre
-        +String documentoIdentidad UK
-        +String email UK
-        +String passwordHash
-        +Enum rol
-        +String telefono
-        +Boolean activo
-        +DateTime createdAt
-        +DateTime updatedAt
-        +validarPassword(password) Boolean
-    }
-
-    class TipoTramite {
-        +Integer id PK
-        +String codigo UK
-        +String nombre
-        +String descripcion
-        +Decimal costo
-        +Integer vigenciaDias
-        +Boolean activo
-        +DateTime createdAt
-        +DateTime updatedAt
-    }
-
-    class SolicitudTramite {
-        +Integer id PK
-        +String radicado UK
-        +Integer usuarioId FK
-        +Integer tipoTramiteId FK
-        +String direccionPredio
-        +String barrioVereda
-        +String observaciones
-        +Enum estado
-        +String motivoRechazo
-        +String codigoVerificacionQr UK
-        +String hashDocumento
-        +Boolean activo
-        +DateTime createdAt
-        +DateTime updatedAt
-    }
-
-    class AuditoriaTramite {
-        +Integer id PK
-        +Integer solicitudId FK
-        +Integer usuarioId FK
-        +String accion
-        +String estadoAnterior
-        +String estadoNuevo
-        +String detalle
-        +String ipOrigen
-        +DateTime createdAt
-    }
-
-    Usuario "1" --> "0..*" SolicitudTramite : radica
-    TipoTramite "1" --> "0..*" SolicitudTramite : clasifica
-    SolicitudTramite "1" --> "0..*" AuditoriaTramite : genera historial
-    Usuario "1" --> "0..*" AuditoriaTramite : ejecuta acción
-```
-
-*Fuente PlantUML disponible en:* `docs/diagrams/uml_clases_dominio.puml`
+![Diagrama de Clases UML](diagrams/uml_clases_dominio.png)
 
 > **Leyenda:** Clases de entidad con visibilidad pública (+), anotaciones de llaves (`PK`, `FK`, `UK`) y relaciones con multiplicidad cardinal.  
 > **Párrafo de lectura (30 segundos):** Un `Usuario` (ciudadano) radica de cero a muchas `SolicitudTramite`, cada una tipificada por un `TipoTramite` (ej. Certificado de Residencia). Cada solicitud posee un número de `radicado` único institucional y genera eventos inmutables en `AuditoriaTramite`. Todas las entidades de negocio cuentan con el atributo booleano `activo` para borrado lógico.
@@ -264,53 +134,9 @@ classDiagram
 
 Representa la interacción temporal del escenario primario principal (**HU-01: Radicación de Solicitud de Certificado**), detallando el camino feliz y dos flujos alternos obligatorios (HTTP 401 por falta de token y HTTP 409 por duplicidad).
 
-![Diagrama de Secuencia UML HU-01](diagrams/uml_secuencia_hu01.svg)
+> 🔗 **Tablero interactivo:** [Abrir en Lucidchart](https://lucid.app/lucidchart/84fc9272-7cf2-46e7-b704-865ca83fc88f/edit?viewport_loc=-902%2C-522%2C2747%2C1540%2C0_0&invitationId=inv_bef8d021-b763-4f34-95da-ca8f4055b91c)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Ciudadano
-    participant Vista as Portal Web Ciudadano
-    participant Router as Express Router
-    participant Auth as Middleware JWT (AC-01)
-    participant Ctrl as SolicitudController
-    participant Model as SolicitudTramite (ORM)
-    participant Audit as Auditoria (ORM)
-    participant BD as PostgreSQL 16
-
-    Ciudadano->>Vista: Diligencia predio y envía formulario
-    Vista->>Router: POST /api/solicitudes (Payload + Authorization Bearer)
-    Router->>Auth: Validar encabezado y firma de token
-
-    alt [Flujo Alterno 1]: Token ausente o manipulado (AC-01 Seguridad)
-        Auth-->>Vista: HTTP 401 Unauthorized { error: 'Token JWT ausente o inválido' }
-        Vista-->>Ciudadano: Muestra mensaje: "Inicie sesión para radicar trámites"
-    else [Token Válido]: Continúa al controlador
-        Auth->>Ctrl: crear(req, res, next)
-        Ctrl->>Model: findOne({ usuarioId, tipoTramiteId, direccionPredio, activo: true })
-        Model->>BD: SELECT * FROM solicitudes_tramite WHERE ...
-        BD-->>Model: Resultado de búsqueda
-
-        alt [Flujo Alterno 2]: Predio ya cuenta con trámite activo (Regla de negocio)
-            Ctrl-->>Vista: HTTP 409 Conflict { error: 'Ya existe solicitud activa para este predio' }
-            Vista-->>Ciudadano: Muestra alerta: "Predio con trámite en curso"
-        else [Camino Feliz]: Datos válidos y sin conflicto
-            Ctrl->>Ctrl: Generar radicado (RAD-2026-XXXXX) y hash QR
-            Ctrl->>Model: create({ radicado, usuarioId, predio, activo: true, ... })
-            Model->>BD: INSERT INTO solicitudes_tramite (...) VALUES (...)
-            BD-->>Model: Fila creada con ID y timestamps
-            
-            Ctrl->>Audit: create({ solicitudId, accion: 'RADICACION', ... })
-            Audit->>BD: INSERT INTO auditoria_tramites (...)
-            BD-->>Audit: Fila de auditoría persistida
-            
-            Ctrl-->>Vista: HTTP 201 Created { solicitud: { radicado, estado: 'radicada' } }
-            Vista-->>Ciudadano: Confirmación en pantalla con número oficial de radicado
-        end
-    end
-```
-
-*Fuente PlantUML disponible en:* `docs/diagrams/uml_secuencia_hu01.puml` | [🔗 Ver / Editar en Lucidchart](https://lucid.app/lucidchart/84fc9272-7cf2-46e7-b704-865ca83fc88f/edit?viewport_loc=-902%2C-522%2C2747%2C1540%2C0_0&invitationId=inv_bef8d021-b763-4f34-95da-ca8f4055b91c)
+![Diagrama de Secuencia UML HU-01](diagrams/uml_secuencia_hu01.png)
 
 > **Leyenda:** Flechas sólidas indican llamadas síncronas; líneas segmentadas indican respuestas; bloques `alt` delimitan caminos alternos y de excepción.  
 > **Párrafo de lectura (30 segundos):** La solicitud llega al router y pasa por el middleware de autenticación, el cual intercepta y rechaza con 401 peticiones no autorizadas. Si el token es válido, el controlador verifica que no existan trámites duplicados en curso (retornando 409 en caso de conflicto). Si los datos son válidos, crea la solicitud con número de radicado oficial, registra la bitácora inmutable en PostgreSQL y responde 201 Created al ciudadano.
@@ -321,42 +147,7 @@ sequenceDiagram
 
 Diagrama físico de nodos, contenedores Docker, red virtual y mapeo de puertos y variables de entorno.
 
-![Diagrama de Despliegue UML](diagrams/uml_despliegue.svg)
-
-```mermaid
-graph TB
-    subgraph Cliente ["Nodo: Dispositivo de Usuario"]
-        NAV["Navegador Web (Chrome, Edge, Safari)<br>Artefacto: Portal Web Ciudadano (HTML5/JS)"]
-    end
-
-    subgraph Servidor ["Nodo Físico: Servidor de Aplicación / Host VM"]
-        subgraph Docker ["Docker Engine (Red: red-alcaldia)"]
-            subgraph BackendCont ["Contenedor: app-backend (Node.js 20 LTS)"]
-                APP["API REST Express<br>Puerto interno: 3000<br>Variables: PORT, NODE_ENV, DB_HOST,<br>DB_USER, DB_PASSWORD, JWT_SECRET"]
-            end
-
-            subgraph DBCont ["Contenedor: db (PostgreSQL 16 Alpine)"]
-                DB_ENGINE["Motor PostgreSQL 16<br>Puerto interno: 5432<br>Variables: POSTGRES_DB, POSTGRES_USER,<br>POSTGRES_PASSWORD"]
-                BD_DATA[("BD: alcaldia_tramites")]
-            end
-
-            VOL[("Volumen Persistente Docker:<br>pgdata")]
-        end
-    end
-
-    NAV -->|HTTP/HTTPS :3000| APP
-    APP -->|TCP/Wire Protocol :5432| DB_ENGINE
-    DB_ENGINE --> BD_DATA
-    BD_DATA --> VOL
-
-    classDef host fill:#f8fafc,stroke:#334155,stroke-width:2px;
-    classDef container fill:#003366,stroke:#002244,stroke-width:2px,color:#fff;
-    classDef db fill:#00897b,stroke:#00695c,stroke-width:2px,color:#fff;
-    class APP container;
-    class DB_ENGINE,BD_DATA,VOL db;
-```
-
-*Fuente PlantUML disponible en:* `docs/diagrams/uml_despliegue.puml`
+![Diagrama de Despliegue UML](diagrams/uml_despliegue.png)
 
 > **Leyenda:** Cajas rectangulares representan nodos de cómputo y contenedores; cilindros representan almacenamiento y bases de datos.  
 > **Párrafo de lectura (30 segundos):** El navegador web del ciudadano se conecta mediante HTTP al puerto expuesto 3000 del contenedor `app-backend`. Este contenedor se comunica a través de la red aislada `red-alcaldia` con el contenedor `db` en el puerto 5432. Los datos se persisten de manera duradera en el volumen Docker `pgdata`, garantizando tolerancia a reinicios sin pérdida de información.

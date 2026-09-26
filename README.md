@@ -43,12 +43,13 @@ alcaldia-tramites-corte-vertical/
 │   │   ├── ADR-001-patron-n-capas-strangler-fig.md
 │   │   ├── ADR-002-autenticacion-jwt-vs-sesiones.md
 │   │   └── ADR-003-uso-orm-sequelize-postgresql.md
-│   └── diagrams/                          # Fuentes de diagramas en notación UML y C4
-│       ├── c4_nivel1_contexto.puml
-│       ├── c4_nivel2_contenedores.puml
-│       ├── uml_clases_dominio.puml
-│       ├── uml_secuencia_hu01.puml
-│       └── uml_despliegue.puml
+│   └── diagrams/                          # Galería visual de diagramas (PNG) y enlaces Lucidchart
+│       ├── README.md
+│       ├── c4_nivel1_contexto.png
+│       ├── c4_nivel2_contenedores.png
+│       ├── uml_clases_dominio.png
+│       ├── uml_secuencia_hu01.png
+│       └── uml_despliegue.png
 ├── db/
 │   └── migrations/
 │       └── 001_esquema_inicial.sql        # Script DDL con PK, FK, CHECK, UNIQUE y borrado lógico
@@ -86,7 +87,7 @@ alcaldia-tramites-corte-vertical/
    - [`docs/adr/ADR-001-patron-n-capas-strangler-fig.md`](docs/adr/ADR-001-patron-n-capas-strangler-fig.md)
    - [`docs/adr/ADR-002-autenticacion-jwt-vs-sesiones.md`](docs/adr/ADR-002-autenticacion-jwt-vs-sesiones.md)
    - [`docs/adr/ADR-003-uso-orm-sequelize-postgresql.md`](docs/adr/ADR-003-uso-orm-sequelize-postgresql.md)
-3. **Diagramas de Arquitectura:** Visualización interactiva en GitHub (Mermaid), fuentes PlantUML y tableros en Lucidchart dentro de [`docs/diagrams/`](docs/diagrams/).
+3. **Diagramas de Arquitectura:** Galería visual (imágenes PNG) y tableros en Lucidchart dentro de [`docs/diagrams/`](docs/diagrams/).
 
 ---
 

@@ -101,6 +101,8 @@ Se selecciona una arquitectura estructurada en **N-Capas** (Presentación / Enru
 
 Muestra el sistema como una caja negra, identificando los actores humanos, sistemas externos colaboradores y los protocolos de comunicación.
 
+![Diagrama de Contexto C4 Nivel 1](diagrams/c4_nivel1_contexto.svg)
+
 ```mermaid
 graph TD
     subgraph Actores
@@ -143,6 +145,8 @@ graph TD
 
 Abre la caja negra del sistema, mostrando las aplicaciones ejecutables, almacenes de datos y protocolos de comunicación.
 
+![Diagrama de Contenedores C4 Nivel 2](diagrams/c4_nivel2_contenedores.svg)
+
 ```mermaid
 graph TD
     subgraph Dispositivo Usuario
@@ -183,6 +187,8 @@ graph TD
 ### 3.3 Vista de Dominio / Objetos — Diagrama de Clases UML
 
 Modelo de datos relacional implementado en el ORM con tipos de datos, llaves primarias, llaves foráneas, restricciones de unicidad y multiplicidades.
+
+![Diagrama de Clases UML](diagrams/uml_clases_dominio.svg)
 
 ```mermaid
 classDiagram
@@ -258,6 +264,8 @@ classDiagram
 
 Representa la interacción temporal del escenario primario principal (**HU-01: Radicación de Solicitud de Certificado**), detallando el camino feliz y dos flujos alternos obligatorios (HTTP 401 por falta de token y HTTP 409 por duplicidad).
 
+![Diagrama de Secuencia UML HU-01](diagrams/uml_secuencia_hu01.svg)
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -302,7 +310,7 @@ sequenceDiagram
     end
 ```
 
-*Fuente PlantUML disponible en:* `docs/diagrams/uml_secuencia_hu01.puml`
+*Fuente PlantUML disponible en:* `docs/diagrams/uml_secuencia_hu01.puml` | [🔗 Ver / Editar en Lucidchart](https://lucid.app/lucidchart/84fc9272-7cf2-46e7-b704-865ca83fc88f/edit?viewport_loc=-902%2C-522%2C2747%2C1540%2C0_0&invitationId=inv_bef8d021-b763-4f34-95da-ca8f4055b91c)
 
 > **Leyenda:** Flechas sólidas indican llamadas síncronas; líneas segmentadas indican respuestas; bloques `alt` delimitan caminos alternos y de excepción.  
 > **Párrafo de lectura (30 segundos):** La solicitud llega al router y pasa por el middleware de autenticación, el cual intercepta y rechaza con 401 peticiones no autorizadas. Si el token es válido, el controlador verifica que no existan trámites duplicados en curso (retornando 409 en caso de conflicto). Si los datos son válidos, crea la solicitud con número de radicado oficial, registra la bitácora inmutable en PostgreSQL y responde 201 Created al ciudadano.
@@ -312,6 +320,8 @@ sequenceDiagram
 ### 3.5 Vista de Despliegue
 
 Diagrama físico de nodos, contenedores Docker, red virtual y mapeo de puertos y variables de entorno.
+
+![Diagrama de Despliegue UML](diagrams/uml_despliegue.svg)
 
 ```mermaid
 graph TB

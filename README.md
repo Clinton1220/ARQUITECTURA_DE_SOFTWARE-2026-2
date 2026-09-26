@@ -86,7 +86,7 @@ alcaldia-tramites-corte-vertical/
    - [`docs/adr/ADR-001-patron-n-capas-strangler-fig.md`](docs/adr/ADR-001-patron-n-capas-strangler-fig.md)
    - [`docs/adr/ADR-002-autenticacion-jwt-vs-sesiones.md`](docs/adr/ADR-002-autenticacion-jwt-vs-sesiones.md)
    - [`docs/adr/ADR-003-uso-orm-sequelize-postgresql.md`](docs/adr/ADR-003-uso-orm-sequelize-postgresql.md)
-3. **Diagramas:** Fuentes en PlantUML dentro de [`docs/diagrams/`](docs/diagrams/).
+3. **Diagramas de Arquitectura:** Visualización interactiva en GitHub (Mermaid), fuentes PlantUML y tableros en Lucidchart dentro de [`docs/diagrams/`](docs/diagrams/).
 
 ---
 

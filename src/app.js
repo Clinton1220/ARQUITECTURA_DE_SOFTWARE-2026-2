@@ -14,8 +14,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos del portal ciudadano
+// Servir archivos estáticos del portal ciudadano y documentación oficial
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/docs', express.static(path.join(__dirname, '../docs')));
 
 // Health check para monitoreo y auto-recuperación (AC-01 Confiabilidad)
 app.get('/api/health', async (req, res) => {

@@ -109,7 +109,12 @@ const iniciarServidor = async () => {
       console.log('=======================================================');
     });
   } catch (error) {
-    console.error('❌ Error fatal al iniciar el servidor:', error.message);
+    console.error('❌ Error fatal al iniciar el servidor:', error.message || error.name);
+    if (error.name.includes('Connection') || error.code === 'EACCES') {
+      console.log('💡 Sugerencia: PostgreSQL no está accesible en localhost:5432.');
+      console.log('   - Para ejecutar con PostgreSQL en Docker: docker-compose up');
+      console.log('   - Para demostración local inmediata con SQLite: DB_DIALECT=sqlite npm start');
+    }
     process.exit(1);
   }
 };

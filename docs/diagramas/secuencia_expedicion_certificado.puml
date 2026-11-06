@@ -1,0 +1,51 @@
+@startuml secuencia_expedicion_certificado
+title Secuencia — Radicación y expedición de certificado (HU-01 / HU-02)
+autonumber
+
+actor Ciudadano
+actor Funcionario
+participant "Portal Web" as UI
+participant "Router\nExpress" as R
+participant "AuthMiddleware\n(JWT)" as A
+participant "SolicitudController" as C
+participant "Modelos ORM\n(Sequelize)" as M
+database "PostgreSQL 16" as DB
+
+== Radicación ==
+Ciudadano -> UI : Diligencia formulario
+UI -> R : POST /api/solicitudes {tipo, predio} + Bearer JWT
+R -> A : verificar token
+alt token ausente o inválido
+  A --> UI : 401 Unauthorized
+else token válido
+  A -> C : crearSolicitud(usuario, datos)
+  C -> M : buscar solicitud en curso\n(usuario, tipo, predio, estado ∈ {radicada, en_revision})
+  M -> DB : SELECT ... WHERE activo
+  DB --> M : resultado
+  alt [Flujo alterno] ya existe solicitud en curso
+    C --> UI : 409 Conflict "Solicitud duplicada"
+    UI --> Ciudadano : Muestra radicado existente
+  else no existe
+    C -> M : BEGIN; INSERT solicitud (estado='radicada')
+    M -> DB : INSERT solicitudes_tramite + auditoria_tramites; COMMIT
+    note right of DB : Índice único parcial uq_solicitud_en_curso\nrespalda la regla si hay concurrencia → 409
+    C --> UI : 201 Created {radicado: RAD-2026-00001}
+  end
+end
+
+== Expedición del certificado ==
+Funcionario -> UI : Aprueba solicitud
+UI -> R : PATCH /api/solicitudes/{id}/aprobar + JWT (rol funcionario)
+R -> A : verificar token y rol
+A -> C : aprobarYExpedir(id)
+C -> M : BEGIN; UPDATE estado='aprobada'
+C -> M : INSERT certificado (QR, hash SHA-256, vencimiento)
+M -> DB : INSERT certificados
+alt ya existe certificado para la solicitud
+  DB --> M : violación UNIQUE uq_certificado_solicitud
+  C --> UI : 409 Conflict "Certificado ya expedido"
+else ok
+  M -> DB : INSERT auditoria_tramites; COMMIT
+  C --> UI : 201 Created {numero_certificado, qr}
+end
+@enduml

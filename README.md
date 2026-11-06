@@ -39,10 +39,16 @@ alcaldia-tramites-corte-vertical/
 │   ├── DAS.md                             # Documento DAS en Markdown
 │   ├── DAS.docx                           # Documento oficial en Word
 │   ├── DAS.pdf                            # Documento oficial en PDF
+│   ├── Guia_Estudio_Sustentacion_Oral_Arquitectura.docx # Guía Maestra oficial para defensa oral
+│   ├── presentacion/                      # Diapositivas interactivas para sustentación
+│   │   └── index.html                     # Deck interactivo 16:9 + ADR Battle Simulator
 │   ├── adr/                               # Registros de Decisiones de Arquitectura
 │   │   ├── ADR-001-patron-n-capas-strangler-fig.md
 │   │   ├── ADR-002-autenticacion-jwt-vs-sesiones.md
 │   │   └── ADR-003-uso-orm-sequelize-postgresql.md
+│   ├── diagramas/                         # Modelos PlantUML editables (.puml)
+│   │   ├── clases_ciudadano_solicitud_certificado.puml
+│   │   └── secuencia_expedicion_certificado.puml
 │   └── diagrams/                          # Galería visual de diagramas (PNG) y enlaces Lucidchart
 │       ├── README.md
 │       ├── c4_nivel1_contexto.png
@@ -51,17 +57,26 @@ alcaldia-tramites-corte-vertical/
 │       ├── uml_secuencia_hu01.png
 │       └── uml_despliegue.png
 ├── db/
-│   └── migrations/
-│       └── 001_esquema_inicial.sql        # Script DDL con PK, FK, CHECK, UNIQUE y borrado lógico
+│   ├── migrations/
+│   │   ├── 001_esquema_inicial.sql        # Script DDL con PK, FK, CHECK, UNIQUE y borrado lógico
+│   │   └── 002_certificados.sql           # DDL de certificados y restricciones únicas de fe pública
+│   └── sustentacion_clase4.sql            # Script de sustentación: INSERTs venenosos y cambio sorpresa
 ├── src/                                   # Código backend (Corte Vertical N-Capas)
 │   ├── config/database.js                 # Conexión Sequelize y pool de base de datos
 │   ├── models/                            # Modelos ORM (Usuario, TipoTramite, Solicitud, Auditoria)
 │   ├── controllers/                       # Controladores de negocio (Auth, Solicitud CRUD)
-│   ├── routes/                            # Rutas Express (públicas y protegidas con JWT)
+│   ├── routes/                            # Rutas Express documentadas (públicas y protegidas con JWT)
 │   ├── middlewares/                       # Autenticación JWT, RBAC y manejo de errores
 │   ├── app.js                             # Configuración y middlewares de Express
-│   └── server.js                          # Punto de entrada y arranque del servidor
+│   └── server.js                          # Punto de entrada y servidor WebSockets
 ├── public/                                # Portal Web Ciudadano 24/7 (HTML5/CSS3/JS)
+│   ├── presentacion.html                  # Visor web de sustentación integrado en servidor
+│   ├── index.html
+│   ├── styles.css
+│   └── app.js
+├── scripts/                               # Automatización de generación de documentos
+│   ├── generar_documentos.py              # Compilador DAS.docx y DAS.pdf
+│   └── generate_docx_summary.py           # Compilador de Guía Maestra de Sustentación Word
 ├── tests/                                 # Pruebas automatizadas de integración
 │   ├── helpers.js
 │   └── solicitud.test.js
@@ -77,17 +92,21 @@ alcaldia-tramites-corte-vertical/
 
 ---
 
-## 📑 Entregables Arquitectónicos (docs/)
+## 📑 Entregables Arquitectónicos y Material de Sustentación (docs/)
 
-1. **Documento de Arquitectura de Software (DAS):**
+1. **Presentación Interactiva y Guía de Sustentación Oral:**
+   - [`docs/presentacion/index.html`](docs/presentacion/index.html) — Deck interactivo 16:9 para proyectar en clase con simulador de ADR Battle (temporizador 60s), visor de diagramas con zoom y flashcards interactivas del pool de preguntas.
+   - [`docs/Guia_Estudio_Sustentacion_Oral_Arquitectura.docx`](docs/Guia_Estudio_Sustentacion_Oral_Arquitectura.docx) — Guía oficial en Word formateada con encabezados formales, portada ejecutiva, tablas con bordes sutiles y las 10 secciones completas de sustentación (incluyendo Clase 4: "Del diagrama a la tabla" e INSERTs venenosos).
+2. **Documento de Arquitectura de Software (DAS / SAD):**
    - [`docs/DAS.md`](docs/DAS.md) — Versión Markdown navegable con diagramas integrados.
    - [`docs/DAS.docx`](docs/DAS.docx) — Versión oficial editable para Word.
    - [`docs/DAS.pdf`](docs/DAS.pdf) — Versión oficial maquetada para impresión y entrega formal.
-2. **Decisiones de Arquitectura (ADRs):**
+3. **Decisiones de Arquitectura (ADRs):**
    - [`docs/adr/ADR-001-patron-n-capas-strangler-fig.md`](docs/adr/ADR-001-patron-n-capas-strangler-fig.md)
    - [`docs/adr/ADR-002-autenticacion-jwt-vs-sesiones.md`](docs/adr/ADR-002-autenticacion-jwt-vs-sesiones.md)
    - [`docs/adr/ADR-003-uso-orm-sequelize-postgresql.md`](docs/adr/ADR-003-uso-orm-sequelize-postgresql.md)
-3. **Diagramas de Arquitectura:** Galería visual (imágenes PNG) y tableros en Lucidchart dentro de [`docs/diagrams/`](docs/diagrams/).
+4. **Diagramas de Arquitectura:** Galería visual (imágenes PNG) y tableros en Lucidchart dentro de [`docs/diagrams/`](docs/diagrams/).
+5. **Sustentación Clase 4 (Del Diagrama a la Tabla):** Scripts SQL en [`db/sustentacion_clase4.sql`](db/sustentacion_clase4.sql) y DDL en [`db/migrations/002_certificados.sql`](db/migrations/002_certificados.sql).
 
 ---
 

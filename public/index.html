@@ -1,514 +1,895 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Portal de Trámites 24/7 — Alcaldía Municipal</title>
-  <meta name="description" content="Portal oficial de trámites y certificados en línea de la Alcaldía Municipal. Sin filas, sin horarios, disponible las 24 horas.">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --cd: #fff;
+      --tx: #0f172a;
+      --mu: #64748b;
+      --pr: #1e3a8a;
+      --bd: #e2e8f0;
+      --ok: #16a34a;
+      --wa: #d97706;
+      --er: #dc2626;
+      --bl: #2563eb
+    }
+
+    @media(prefers-color-scheme:dark) {
+      :root {
+        --bg: #0b1220;
+        --cd: #131c2e;
+        --tx: #e5e9f2;
+        --mu: #94a3b8;
+        --pr: #3b5bdb;
+        --bd: #26324a
+      }
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    i.bi {
+      margin-right: 5px;
+      vertical-align: -.1em
+    }
+
+    .chip i.bi,
+    .tag i.bi {
+      margin-right: 4px
+    }
+
+    .cat h5 i.bi {
+      color: var(--pr);
+      font-size: 1.3rem
+    }
+
+    body {
+      margin: 0;
+      font-family: Outfit, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--tx)
+    }
+
+    .hidden {
+      display: none !important
+    }
+
+    .c {
+      max-width: 1100px;
+      margin: auto;
+      padding: 0 16px
+    }
+
+    header {
+      background: var(--pr);
+      color: #fff;
+      padding: 12px 0;
+      padding-top: max(12px, env(safe-area-inset-top))
+    }
+
+    header .c {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.3rem
+    }
+
+    header p {
+      margin: 0;
+      font-size: .8rem;
+      opacity: .85
+    }
+
+    .pill {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: .8rem;
+      background: #ffffff22;
+      padding: 5px 10px;
+      border-radius: 99px
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #22c55e
+    }
+
+    .banner {
+      background: linear-gradient(135deg, var(--pr), #2563eb);
+      color: #fff;
+      padding: 24px 0
+    }
+
+    .banner h2 {
+      margin: 0 0 4px
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px
+    }
+
+    .chip {
+      background: #ffffff22;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: .85rem
+    }
+
+    nav.tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin: 16px 0
+    }
+
+    .tb {
+      border: 1px solid var(--bd);
+      background: var(--cd);
+      color: var(--tx);
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font: inherit;
+      white-space: nowrap
+    }
+
+    .tb.on {
+      background: var(--pr);
+      color: #fff;
+      border-color: var(--pr)
+    }
+
+    .pane {
+      display: none
+    }
+
+    .pane.on {
+      display: block
+    }
+
+    .card {
+      background: var(--cd);
+      border: 1px solid var(--bd);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px
+    }
+
+    .card h3 {
+      margin: 0 0 4px
+    }
+
+    .sub {
+      color: var(--mu);
+      font-size: .85rem;
+      margin: 0 0 14px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px
+    }
+
+    .cat {
+      border: 2px solid var(--bd);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      background: var(--cd)
+    }
+
+    .cat.sel {
+      border-color: var(--pr);
+      box-shadow: 0 0 0 3px #3b5bdb33
+    }
+
+    .cat h5 {
+      margin: 6px 0
+    }
+
+    .cat p {
+      font-size: .82rem;
+      color: var(--mu);
+      margin: 0 0 8px
+    }
+
+    .tag {
+      font-size: .75rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: #16a34a22;
+      color: var(--ok)
+    }
+
+    .tag.fee {
+      background: #d9770622;
+      color: var(--wa)
+    }
+
+    .steps {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+      flex-wrap: wrap
+    }
+
+    .st {
+      flex: 1;
+      min-width: 130px;
+      padding: 8px;
+      border-radius: 8px;
+      background: var(--bg);
+      font-size: .82rem;
+      color: var(--mu);
+      text-align: center
+    }
+
+    .st.on {
+      background: var(--pr);
+      color: #fff
+    }
+
+    .st.ok {
+      background: #16a34a22;
+      color: var(--ok)
+    }
+
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 600;
+      margin: 10px 0 4px
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--bd);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--tx);
+      font: inherit
+    }
+
+    .f2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 14px
+    }
+
+    .f2 .w {
+      grid-column: 1/-1
+    }
+
+    @media(max-width:640px) {
+      .f2 {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      background: var(--pr);
+      color: #fff;
+      margin: 10px 6px 0 0
+    }
+
+    .btn.s {
+      background: var(--bd);
+      color: var(--tx)
+    }
+
+    .btn.sm {
+      padding: 5px 10px;
+      font-size: .8rem;
+      margin: 0
+    }
+
+    .al {
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: .9rem
+    }
+
+    .al.ok {
+      background: #16a34a22;
+      color: var(--ok)
+    }
+
+    .al.er {
+      background: #dc262622;
+      color: var(--er)
+    }
+
+    .tw {
+      overflow-x: auto
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--bd)
+    }
+
+    .b {
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: .75rem;
+      font-weight: 600
+    }
+
+    .b-r {
+      background: #2563eb22;
+      color: var(--bl)
+    }
+
+    .b-v {
+      background: #d9770622;
+      color: var(--wa)
+    }
+
+    .b-a {
+      background: #16a34a22;
+      color: var(--ok)
+    }
+
+    .b-x {
+      background: #dc262622;
+      color: var(--er)
+    }
+
+    .qf {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px
+    }
+
+    .qf span {
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 99px;
+      background: var(--bg);
+      border: 1px solid var(--bd);
+      font-size: .82rem
+    }
+
+    .qf span.on {
+      background: var(--pr);
+      color: #fff
+    }
+
+    .met {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .met div {
+      background: var(--cd);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center
+    }
+
+    .met b {
+      font-size: 1.6rem;
+      display: block
+    }
+
+    .feed {
+      max-height: 220px;
+      overflow: auto
+    }
+
+    .feed div {
+      padding: 7px 4px;
+      border-bottom: 1px solid var(--bd);
+      font-size: .85rem
+    }
+
+    .rec {
+      border: 2px solid var(--ok);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px
+    }
+
+    @media(max-width:640px) {
+      .rec {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .rec .qr {
+      text-align: center;
+      font-size: .7rem
+    }
+
+    .rec .qr svg {
+      width: 160px;
+      height: 160px;
+      background: #fff;
+      padding: 6px;
+      border-radius: 8px
+    }
+
+    .kv {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px dashed var(--bd);
+      padding: 5px 0;
+      font-size: .88rem
+    }
+
+    .kv span:last-child {
+      font-weight: 600;
+      text-align: right;
+      word-break: break-all
+    }
+
+    .mono {
+      font-family: monospace
+    }
+
+    .demo {
+      background: #d9770622;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: .85rem;
+      margin-bottom: 10px
+    }
+
+    #toasts {
+      position: fixed;
+      right: 12px;
+      top: calc(12px + env(safe-area-inset-top));
+      z-index: 99;
+      display: grid;
+      gap: 8px
+    }
+
+    .toast {
+      background: var(--pr);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      box-shadow: 0 4px 14px #0004;
+      max-width: 300px;
+      font-size: .88rem
+    }
+
+    .mo {
+      position: fixed;
+      inset: 0;
+      background: #0008;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px
+    }
+
+    .mb {
+      background: var(--cd);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 440px
+    }
+
+    footer {
+      text-align: center;
+      color: var(--mu);
+      font-size: .8rem;
+      padding: 20px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom))
+    }
+
+    @media print {
+
+      header,
+      .banner,
+      nav.tabs,
+      footer,
+      .btn,
+      #toasts,
+      .card:not(.pr) {
+        display: none !important
+      }
+
+      .rec {
+        border-color: #000
+      }
+    }
+  </style>
 </head>
+
 <body>
-
-  <!-- BARRA DE NOTIFICACIONES EN TIEMPO REAL -->
-  <div id="toast-container" aria-live="polite"></div>
-
-  <!-- ENCABEZADO INSTITUCIONAL -->
-  <header class="header">
-    <div class="container header-container">
-      <div class="brand">
-        <div class="brand-badge"><i class="bi bi-bank2"></i> GOV.CO</div>
-        <div class="brand-titles">
-          <h1>Alcaldía Municipal</h1>
-          <p>Secretaría de Gobierno — Trámites y Certificados en Línea 24/7</p>
-        </div>
+  <div id="toasts"></div>
+  <header>
+    <div class="c">
+      <div>
+        <h1><i class="bi bi-bank2" aria-hidden="true"></i> Alcaldía Municipal</h1>
+        <p>Secretaría de Gobierno — Trámites y Certificados en Línea 24/7</p>
       </div>
-      <div class="header-right">
-        <div class="ws-indicator" id="ws-indicator" title="Estado de conexión en tiempo real">
-          <span class="ws-dot" id="ws-dot"></span>
-          <i class="bi bi-broadcast"></i>
-          <span id="ws-text">Conectando...</span>
-        </div>
-        <div class="header-status">
-          <span class="status-indicator"></span>
-          <span id="system-status-text">Sistema Operativo 24/7</span>
-        </div>
-        <div id="user-pill" class="user-pill hidden">
-          <span id="user-role-badge" class="role-badge"></span>
-          <span id="user-name-display"></span>
-          <button id="btn-logout" class="btn-sm btn-outline">
-            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-          </button>
-        </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span class="pill"><span class="dot"></span><span id="ws">Tiempo real activo</span></span>
+        <span id="up" class="pill hidden"><b id="un"></b><span id="ur" class="b b-a"></span><button class="btn sm s"
+            id="out">Cerrar sesión</button></span>
       </div>
     </div>
   </header>
-
-  <!-- BANNER PRINCIPAL -->
   <section class="banner">
-    <div class="container banner-inner">
-      <div class="banner-badge">CASO 2 — ARQUITECTURA STRANGLER FIG + TIEMPO REAL (WebSockets)</div>
+    <div class="c">
       <h2>Evolución Digital de Trámites Municipales</h2>
-      <p>Notificaciones instantáneas. Gestión sin filas. Trazabilidad completa en tiempo real.</p>
-      <div class="banner-stats" id="banner-stats">
-        <div class="stat-chip" id="stat-total"><i class="bi bi-collection"></i> — Trámites</div>
-        <div class="stat-chip stat-green" id="stat-aprobadas"><i class="bi bi-check-circle"></i> — Aprobados</div>
-        <div class="stat-chip stat-yellow" id="stat-revision"><i class="bi bi-hourglass-split"></i> — En Revisión</div>
-        <div class="stat-chip stat-blue" id="stat-radicadas"><i class="bi bi-inbox"></i> — Radicados</div>
-      </div>
+      <div>Notificaciones instantáneas. Gestión sin filas. Trazabilidad completa.</div>
+      <div class="chips"><span class="chip" id="s0"></span><span class="chip" id="s1"></span><span class="chip"
+          id="s2"></span><span class="chip" id="s3"></span></div>
     </div>
   </section>
-
-  <!-- CONTENEDOR PRINCIPAL -->
-  <main class="container main-content">
-
-    <!-- PESTAÑAS DE NAVEGACIÓN -->
-    <nav class="nav-tabs" id="nav-tabs">
-      <button class="tab-btn active" data-tab="tab-radicar">
-        <i class="bi bi-file-earmark-plus"></i> Radicar Trámite
-      </button>
-      <button class="tab-btn" data-tab="tab-mis-tramites">
-        <i class="bi bi-card-list"></i> Mis Solicitudes
-      </button>
-      <button class="tab-btn" data-tab="tab-consultar">
-        <i class="bi bi-search"></i> Consultar Radicado
-      </button>
-      <button class="tab-btn" data-tab="tab-verificar">
-        <i class="bi bi-shield-check"></i> Verificar QR
-      </button>
-      <button class="tab-btn" data-tab="tab-login" id="tab-login-btn">
-        <i class="bi bi-person-lock"></i> Ingreso
-      </button>
-      <!-- Panel exclusivo funcionario (oculto hasta login) -->
-      <button class="tab-btn tab-btn-admin hidden" data-tab="tab-admin" id="tab-admin-btn">
-        <i class="bi bi-gear-wide-connected"></i> Panel Funcionario
-      </button>
+  <main class="c">
+    <nav class="tabs" id="tabs">
+      <button class="tb on" data-t="radicar"><i class="bi bi-file-earmark-plus" aria-hidden="true"></i>Radicar
+        Trámite</button><button class="tb" data-t="mis"><i class="bi bi-card-list" aria-hidden="true"></i>Mis
+        Solicitudes</button>
+      <button class="tb" data-t="consultar"><i class="bi bi-search" aria-hidden="true"></i>Consultar
+        Radicado</button><button class="tb" data-t="verificar"><i class="bi bi-shield-check"
+          aria-hidden="true"></i>Verificar QR</button>
+      <button class="tb" data-t="login" id="tlogin"><i class="bi bi-person-lock"
+          aria-hidden="true"></i>Ingreso</button><button class="tb hidden" data-t="admin" id="tadmin"><i
+          class="bi bi-gear-wide-connected" aria-hidden="true"></i>Panel Funcionario</button>
     </nav>
 
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- TAB 1: RADICACIÓN (HU-01) -->
-    <!-- ═══════════════════════════════════════════════════ -->
-    <section id="tab-radicar" class="tab-pane active">
+    <section class="pane on" id="p-radicar">
       <div class="card">
-        <div class="card-header">
-          <div class="card-header-icon"><i class="bi bi-file-earmark-text"></i></div>
-          <div>
-            <h3>Radicación de Solicitud en Línea 24/7</h3>
-            <p class="subtitle">Expida certificados oficiales sin desplazamientos. Respuesta en tiempo real.</p>
-          </div>
+        <h3>Radicación de Solicitud en Línea 24/7</h3>
+        <p class="sub">Elija un trámite, complete los datos y se generará su QR de verificación automáticamente.</p>
+        <div class="al er hidden" id="nauth">Debe <a href="#login" id="gologin">iniciar sesión</a> para radicar un
+          trámite.</div>
+        <div class="grid" id="catalog"></div>
+        <div class="steps">
+          <div class="st" id="st1">1. Seleccionar trámite</div>
+          <div class="st" id="st2">2. Ubicación del predio</div>
+          <div class="st" id="st3">3. Confirmación y QR</div>
         </div>
-        <div class="card-body">
-          <div class="auth-required-notice hidden" id="notice-auth-radicar">
-            <i class="bi bi-lock"></i>
-            <span>Debe <a href="#" id="link-login-radicar">iniciar sesión</a> para radicar un trámite.</span>
+        <form id="fr">
+          <div class="f2">
+            <div class="w"><label>Tipo de trámite *</label><select id="tipo" required></select></div>
+            <div><label>Barrio o vereda *</label><input id="barrio" required placeholder="Ej: Barrio El Centro"></div>
+            <div><label>Dirección exacta *</label><input id="dir" required placeholder="Ej: Carrera 5 # 10 - 24"></div>
+            <div class="w"><label>Observaciones</label><textarea id="obs" rows="2"></textarea></div>
           </div>
-          <form id="form-radicar">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="tipo-tramite-select">
-                  <i class="bi bi-list-ul"></i> Tipo de Trámite o Certificado *
-                </label>
-                <select id="tipo-tramite-select" required class="form-input">
-                  <option value="">Cargando trámites disponibles...</option>
-                </select>
-                <span class="form-hint" id="tipo-tramite-hint"></span>
-              </div>
-
-              <div class="form-group">
-                <label for="barrio-vereda-input">
-                  <i class="bi bi-geo-alt"></i> Barrio o Vereda del Predio *
-                </label>
-                <input type="text" id="barrio-vereda-input" placeholder="Ej: Barrio El Centro / Vereda La Palma" required class="form-input">
-              </div>
-
-              <div class="form-group full-width">
-                <label for="direccion-predio-input">
-                  <i class="bi bi-signpost-2"></i> Dirección Exacta del Predio *
-                </label>
-                <input type="text" id="direccion-predio-input" placeholder="Ej: Carrera 5 # 10 - 24" required class="form-input">
-              </div>
-
-              <div class="form-group full-width">
-                <label for="observaciones-input">
-                  <i class="bi bi-chat-left-text"></i> Observaciones o Motivo de la Solicitud
-                </label>
-                <textarea id="observaciones-input" rows="3" placeholder="Información adicional para la Secretaría de Gobierno..." class="form-input"></textarea>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" id="btn-submit-tramite">
-                <i class="bi bi-send-fill"></i> Radicar Solicitud Oficialmente
-              </button>
-              <button type="button" class="btn btn-demo" id="btn-demo-fill">
-                <i class="bi bi-magic"></i> Llenar con datos de ejemplo
-              </button>
-            </div>
-          </form>
-          <div id="radicar-alert" class="alert hidden"></div>
-          <!-- Recibo de radicado exitoso -->
-          <div id="recibo-radicado" class="recibo hidden">
-            <div class="recibo-header">
-              <i class="bi bi-check-circle-fill"></i> Solicitud Radicada Exitosamente
-            </div>
-            <div class="recibo-body">
-              <div class="recibo-row">
-                <span><i class="bi bi-hash"></i> N° Radicado:</span>
-                <strong id="recibo-radicado-num"></strong>
-              </div>
-              <div class="recibo-row">
-                <span><i class="bi bi-qr-code"></i> Código QR:</span>
-                <strong id="recibo-qr"></strong>
-              </div>
-              <div class="recibo-row">
-                <span><i class="bi bi-file-text"></i> Trámite:</span>
-                <span id="recibo-tramite"></span>
-              </div>
-              <div class="recibo-row">
-                <span><i class="bi bi-circle-fill"></i> Estado:</span>
-                <span class="badge badge-radicada"><i class="bi bi-file-earmark-arrow-up"></i> Radicada</span>
-              </div>
-              <div class="recibo-row">
-                <span><i class="bi bi-calendar-event"></i> Fecha:</span>
-                <span id="recibo-fecha"></span>
-              </div>
-            </div>
-            <p class="recibo-footer">
-              <i class="bi bi-bell"></i>
-              Conserve su número de radicado. Recibirá notificaciones en tiempo real de cualquier cambio.
-            </p>
-          </div>
-        </div>
+          <button class="btn" type="submit">Radicar solicitud oficialmente</button><button class="btn s" type="button"
+            id="demo"><i class="bi bi-magic"></i> Llenar con datos de ejemplo</button>
+        </form>
+        <div id="ra" class="al hidden"></div>
+        <div id="rec" class="rec pr hidden"></div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- TAB 2: MIS SOLICITUDES -->
-    <!-- ═══════════════════════════════════════════════════ -->
-    <section id="tab-mis-tramites" class="tab-pane">
+    <section class="pane" id="p-mis">
       <div class="card">
-        <div class="card-header flex-between">
-          <div class="card-header-with-icon">
-            <div class="card-header-icon"><i class="bi bi-journal-check"></i></div>
-            <div>
-              <h3>Mis Solicitudes Radicadas</h3>
-              <p class="subtitle">
-                Seguimiento en tiempo real.
-                <span class="ws-live-badge"><i class="bi bi-record-circle-fill"></i> EN VIVO</span>
-              </p>
-            </div>
-          </div>
-          <div class="header-actions">
-            <select id="filtro-estado" class="form-input form-input-sm">
-              <option value="">Todos los estados</option>
-              <option value="radicada"><i class="bi bi-file-earmark-arrow-up"></i> Radicadas</option>
-              <option value="en_revision">En Revisión</option>
-              <option value="aprobada">Aprobadas</option>
-              <option value="rechazada">Rechazadas</option>
-            </select>
-            <button id="btn-recargar-solicitudes" class="btn btn-secondary btn-sm">
-              <i class="bi bi-arrow-clockwise"></i> Actualizar
-            </button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th><i class="bi bi-hash"></i> Radicado</th>
-                  <th><i class="bi bi-file-text"></i> Trámite</th>
-                  <th><i class="bi bi-house"></i> Predio</th>
-                  <th><i class="bi bi-calendar3"></i> Fecha</th>
-                  <th><i class="bi bi-circle-half"></i> Estado</th>
-                  <th><i class="bi bi-tools"></i> Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tabla-solicitudes-body">
-                <tr><td colspan="6" class="text-center py-4 text-muted">
-                  <i class="bi bi-person-lock"></i> Inicia sesión para ver tus trámites.
-                </td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- TAB 3: CONSULTA PÚBLICA POR RADICADO -->
-    <!-- ═══════════════════════════════════════════════════ -->
-    <section id="tab-consultar" class="tab-pane">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-icon"><i class="bi bi-binoculars"></i></div>
-          <div>
-            <h3>Consulta y Seguimiento de Trámite (RF-05)</h3>
-            <p class="subtitle">Consulta pública sin autenticación mediante código de radicado. Sin filas, sin horarios.</p>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="search-bar">
-            <input type="text" id="input-buscar-radicado" placeholder="Ej: RAD-2026-12345" class="form-input">
-            <button id="btn-buscar-radicado" class="btn btn-primary">
-              <i class="bi bi-search"></i> Consultar
-            </button>
-          </div>
-          <div id="resultado-radicado" class="search-result-box hidden"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- TAB 4: VERIFICACIÓN QR -->
-    <!-- ═══════════════════════════════════════════════════ -->
-    <section id="tab-verificar" class="tab-pane">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-icon"><i class="bi bi-patch-check"></i></div>
-          <div>
-            <h3>Validación Digital de Certificados (RF-06)</h3>
-            <p class="subtitle">Comprobación de autenticidad con hash SHA-256 y firma electrónica institucional.</p>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="search-bar">
-            <input type="text" id="input-buscar-qr" placeholder="Ingrese el Código QR (ej: QR-ALCALDIA-XXXXXXXXXXXXXXXX)" class="form-input">
-            <button id="btn-buscar-qr" class="btn btn-primary">
-              <i class="bi bi-shield-check"></i> Verificar
-            </button>
-          </div>
-          <div id="resultado-qr" class="search-result-box hidden"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- TAB 5: LOGIN / REGISTRO -->
-    <!-- ═══════════════════════════════════════════════════ -->
-    <section id="tab-login" class="tab-pane">
-      <div class="grid-2-cols">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-icon"><i class="bi bi-person-lock"></i></div>
-            <div>
-              <h3>Iniciar Sesión</h3>
-              <p class="subtitle">Autenticación segura con JWT (AC-01 / AC-02)</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="demo-credentials">
-              <i class="bi bi-lightbulb-fill"></i> <strong>Cuenta Demo Funcionario:</strong><br>
-              <code>funcionario@alcaldia.gov.co</code> / <code>Alcaldia2026*</code>
-            </div>
-            <form id="form-login">
-              <div class="form-group">
-                <label><i class="bi bi-envelope"></i> Correo Electrónico</label>
-                <input type="email" id="login-email" required placeholder="correo@ejemplo.com" class="form-input">
-              </div>
-              <div class="form-group">
-                <label><i class="bi bi-key"></i> Contraseña</label>
-                <input type="password" id="login-password" required placeholder="••••••••" class="form-input">
-              </div>
-              <button type="submit" class="btn btn-primary btn-block" id="btn-login">
-                <i class="bi bi-door-open"></i> Ingresar al Sistema
-              </button>
-            </form>
-            <div id="login-alert" class="alert hidden"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-icon"><i class="bi bi-person-plus"></i></div>
-            <div>
-              <h3>Registro de Ciudadano</h3>
-              <p class="subtitle">Crea tu cuenta para radicar y gestionar certificados en línea.</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <form id="form-registro">
-              <div class="form-group">
-                <label><i class="bi bi-person-badge"></i> Nombre Completo *</label>
-                <input type="text" id="reg-nombre" required placeholder="Nombres y Apellidos" class="form-input">
-              </div>
-              <div class="form-group">
-                <label><i class="bi bi-credit-card-2-front"></i> Cédula de Ciudadanía *</label>
-                <input type="text" id="reg-documento" required placeholder="Número de documento" class="form-input">
-              </div>
-              <div class="form-group">
-                <label><i class="bi bi-envelope-at"></i> Correo Electrónico *</label>
-                <input type="email" id="reg-email" required placeholder="correo@ejemplo.com" class="form-input">
-              </div>
-              <div class="form-group">
-                <label><i class="bi bi-lock"></i> Contraseña *</label>
-                <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres" class="form-input">
-              </div>
-              <button type="submit" class="btn btn-secondary btn-block">
-                <i class="bi bi-person-check"></i> Registrarse como Ciudadano
-              </button>
-            </form>
-            <div id="reg-alert" class="alert hidden"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- TAB 6: PANEL DE FUNCIONARIO (solo funcionarios) -->
-    <!-- ═══════════════════════════════════════════════════ -->
-    <section id="tab-admin" class="tab-pane">
-      <!-- Dashboard de Métricas -->
-      <div class="dashboard-grid">
-        <div class="metric-card metric-blue">
-          <div class="metric-icon"><i class="bi bi-inbox-fill"></i></div>
-          <div class="metric-value" id="metric-total">—</div>
-          <div class="metric-label">Total Solicitudes</div>
-        </div>
-        <div class="metric-card metric-yellow">
-          <div class="metric-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
-          <div class="metric-value" id="metric-radicadas">—</div>
-          <div class="metric-label">Radicadas (Pendientes)</div>
-        </div>
-        <div class="metric-card metric-orange">
-          <div class="metric-icon"><i class="bi bi-hourglass-split"></i></div>
-          <div class="metric-value" id="metric-revision">—</div>
-          <div class="metric-label">En Revisión</div>
-        </div>
-        <div class="metric-card metric-green">
-          <div class="metric-icon"><i class="bi bi-check-circle-fill"></i></div>
-          <div class="metric-value" id="metric-aprobadas">—</div>
-          <div class="metric-label">Aprobadas</div>
-        </div>
-        <div class="metric-card metric-red">
-          <div class="metric-icon"><i class="bi bi-x-circle-fill"></i></div>
-          <div class="metric-value" id="metric-rechazadas">—</div>
-          <div class="metric-label">Rechazadas</div>
-        </div>
-      </div>
-
-      <!-- Feed de Actividad en Tiempo Real -->
-      <div class="card mt-4">
-        <div class="card-header flex-between">
-          <div class="card-header-with-icon">
-            <div class="card-header-icon"><i class="bi bi-activity"></i></div>
-            <div>
-              <h3>Actividad en Tiempo Real</h3>
-              <p class="subtitle">
-                <span class="ws-live-badge"><i class="bi bi-record-circle-fill"></i> EN VIVO</span>
-                — Notificaciones instantáneas vía WebSocket
-              </p>
-            </div>
-          </div>
-          <button id="btn-limpiar-feed" class="btn btn-secondary btn-sm">
-            <i class="bi bi-trash3"></i> Limpiar
-          </button>
-        </div>
-        <div class="card-body p-0">
-          <div id="activity-feed" class="activity-feed">
-            <div class="feed-empty">
-              <i class="bi bi-broadcast" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4"></i>
-              Esperando actividad en tiempo real...
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gestión de Todas las Solicitudes -->
-      <div class="card mt-4">
-        <div class="card-header flex-between">
-          <div class="card-header-with-icon">
-            <div class="card-header-icon"><i class="bi bi-sliders2"></i></div>
-            <div>
-              <h3>Gestión Administrativa de Solicitudes</h3>
-              <p class="subtitle">Aprobar, rechazar o poner en revisión cualquier solicitud ciudadana.</p>
-            </div>
-          </div>
-          <button id="btn-recargar-admin" class="btn btn-secondary btn-sm">
-            <i class="bi bi-arrow-clockwise"></i> Actualizar
-          </button>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th><i class="bi bi-hash"></i> Radicado</th>
-                  <th><i class="bi bi-person"></i> Ciudadano</th>
-                  <th><i class="bi bi-file-text"></i> Trámite</th>
-                  <th><i class="bi bi-house"></i> Predio</th>
-                  <th><i class="bi bi-calendar3"></i> Fecha</th>
-                  <th><i class="bi bi-circle-half"></i> Estado</th>
-                  <th><i class="bi bi-pencil-square"></i> Gestionar</th>
-                </tr>
-              </thead>
-              <tbody id="tabla-admin-body">
-                <tr><td colspan="7" class="text-center py-4 text-muted">
-                  <i class="bi bi-hourglass"></i> Cargando solicitudes...
-                </td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- PIE DE PÁGINA -->
-  <footer class="footer">
-    <div class="container footer-content">
-      <div>
-        <p><i class="bi bi-bank2"></i> <strong>Alcaldía Municipal</strong> — Secretaría de Gobierno</p>
-        <p class="text-muted">
-          <i class="bi bi-diagram-3"></i> Arquitectura de Software: arc42 + C4 Model + Vertical Slice + WebSockets
-        </p>
-      </div>
-      <div class="text-right">
-        <p class="badge-tag"><i class="bi bi-tag"></i> Versión 2.0.0 (Strangler Fig — Tiempo Real)</p>
-        <p class="text-muted" id="footer-uptime"></p>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Modal de Cambio de Estado (Funcionario) -->
-  <div id="modal-estado" class="modal-overlay hidden">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h4><i class="bi bi-pencil-square"></i> Gestionar Solicitud</h4>
-        <button id="modal-close" class="modal-close-btn"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <div class="modal-body">
-        <p class="mb-2"><i class="bi bi-hash"></i> Radicado: <strong id="modal-radicado-text"></strong></p>
-        <p class="mb-2"><i class="bi bi-person"></i> Ciudadano: <strong id="modal-ciudadano-text"></strong></p>
-        <p class="mb-3"><i class="bi bi-circle-half"></i> Estado actual: <span id="modal-estado-actual"></span></p>
-        <div class="form-group">
-          <label><i class="bi bi-arrow-repeat"></i> Nuevo Estado *</label>
-          <select id="modal-nuevo-estado" class="form-input">
-            <option value="en_revision">Poner en Revisión</option>
-            <option value="aprobada">Aprobar Solicitud</option>
-            <option value="rechazada">Rechazar Solicitud</option>
+        <h3>Mis Solicitudes Radicadas <span class="b b-x"><i class="bi bi-record-circle-fill"></i>EN VIVO</span></h3>
+        <p class="sub">Seguimiento en tiempo real.</p>
+        <div class="f2"><select id="fest">
+            <option value="">Todos los estados</option>
+            <option value="radicada">Radicadas</option>
+            <option value="en_revision">En revisión</option>
+            <option value="aprobada">Aprobadas</option>
+            <option value="rechazada">Rechazadas</option>
           </select>
+          <input type="search" id="qmis" placeholder="Buscar por radicado o predio...">
         </div>
-        <div class="form-group" id="motivo-rechazo-group" style="display:none">
-          <label><i class="bi bi-exclamation-triangle"></i> Motivo de Rechazo *</label>
-          <textarea id="modal-motivo-rechazo" class="form-input" rows="2" placeholder="Indique el motivo del rechazo..."></textarea>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr>
+                <th>Radicado</th>
+                <th>Trámite</th>
+                <th>Predio</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tmis"></tbody>
+          </table>
         </div>
       </div>
-      <div class="modal-footer">
-        <button id="modal-cancel-btn" class="btn btn-secondary">
-          <i class="bi bi-x-circle"></i> Cancelar
-        </button>
-        <button id="modal-confirm-btn" class="btn btn-primary">
-          <i class="bi bi-check2-circle"></i> Confirmar Cambio
-        </button>
+    </section>
+
+    <section class="pane" id="p-consultar">
+      <div class="card pr">
+        <h3>Consulta y Seguimiento (RF-05)</h3>
+        <p class="sub">Consulta pública sin autenticación mediante número de radicado.</p>
+        <div class="f2"><input id="qrad" placeholder="Ej: RAD-2026-12345">
+          <div><button class="btn" id="bcon" style="margin-top:0">Consultar</button></div>
+        </div>
+        <div id="rcon" class="hidden"></div>
       </div>
+    </section>
+
+    <section class="pane" id="p-verificar">
+      <div class="card pr">
+        <h3>Validación Digital de Certificados (RF-06)</h3>
+        <p class="sub">Comprobación de autenticidad con hash SHA-256.</p>
+        <div class="f2"><input id="qqr" placeholder="QR-ALCALDIA-XXXXXXXXXXXXXXXX">
+          <div><button class="btn" id="bver" style="margin-top:0">Verificar</button></div>
+        </div>
+        <div id="rver" class="hidden"></div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-login">
+      <div class="f2" style="gap:16px">
+        <div class="card">
+          <h3>Iniciar Sesión</h3>
+          <div class="demo">Demo funcionario:<br><code>funcionario@alcaldia.gov.co</code> / <code>Alcaldia2026*</code>
+            <button class="btn sm s" id="fill">Usar</button></div>
+          <form id="fl"><label>Correo</label><input type="email" id="le" required><label>Contraseña</label><input
+              type="password" id="lp" required><button class="btn" style="width:100%">Ingresar</button></form>
+          <div id="la" class="al hidden"></div>
+        </div>
+        <div class="card">
+          <h3>Registro de Ciudadano</h3>
+          <form id="fg"><label>Nombre completo *</label><input id="gn" required><label>Cédula *</label><input id="gd"
+              required pattern="[0-9]{5,12}" inputmode="numeric"><label>Correo *</label><input type="email" id="ge"
+              required><label>Contraseña *</label><input type="password" id="gp" required minlength="6"><button
+              class="btn" style="width:100%">Registrarse</button></form>
+          <div id="ga" class="al hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-admin">
+      <div class="met">
+        <div><b id="m0"></b>Total</div>
+        <div><b id="m1"></b>Radicadas</div>
+        <div><b id="m2"></b>En revisión</div>
+        <div><b id="m3"></b>Aprobadas</div>
+        <div><b id="m4"></b>Rechazadas</div>
+      </div>
+      <div class="card">
+        <h3>Actividad en Tiempo Real</h3><button class="btn sm s" id="clr">Limpiar</button>
+        <div class="feed" id="feed">
+          <div>Esperando actividad...</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Gestión Administrativa</h3>
+        <div class="qf" id="aq"><span class="on" data-f="">Todos</span><span data-f="radicada">Radicadas</span><span
+            data-f="en_revision">En revisión</span><span data-f="aprobada">Aprobadas</span><span
+            data-f="rechazada">Rechazadas</span></div>
+        <div class="f2"><input type="search" id="qadm"
+            placeholder="Filtrar por radicado, ciudadano, cédula o predio...">
+          <div><button class="btn sm" id="csv">Exportar CSV</button></div>
+        </div>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr>
+                <th>Radicado</th>
+                <th>Ciudadano</th>
+                <th>Trámite</th>
+                <th>Predio</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tadm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>Alcaldía Municipal — Versión 2.0.0 · Datos guardados en este navegador · Tiempo real entre pestañas</footer>
+
+  <div class="mo hidden" id="mo">
+    <div class="mb">
+      <h3>Gestionar solicitud</h3>
+      <p id="mi"></p><label>Nuevo estado *</label>
+      <select id="mne">
+        <option value="en_revision">Poner en revisión</option>
+        <option value="aprobada">Aprobar solicitud</option>
+        <option value="rechazada">Rechazar solicitud</option>
+      </select>
+      <div id="mmg" class="hidden"><label>Motivo de rechazo *</label><textarea id="mm" rows="2"></textarea></div>
+      <div id="mal" class="al er hidden"></div><button class="btn s" id="mc">Cancelar</button><button class="btn"
+        id="mk">Confirmar cambio</button>
     </div>
   </div>
 
-  <!-- Socket.io client -->
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="app.js"></script>
+  <script>
+    const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+    const CAT = [{ c: 'CERT-RESIDENCIA', n: 'Certificado de Residencia', d: 'Acredita residencia formal para empleo, colegios o subsidios.', v: 90, p: 0, i: 'house-door' },
+    { c: 'CERT-PAZ-SALVO', n: 'Paz y Salvo Municipal', d: 'Certifica no adeudar impuestos prediales ni tasas.', v: 30, p: 0, i: 'shield-check' },
+    { c: 'CERT-ESTRATIFICACION', n: 'Estratificación Socioeconómica', d: 'Indica el estrato del predio (Planeación).', v: 365, p: 0, i: 'bar-chart-steps' },
+    { c: 'CERT-NOMENCLATURA', n: 'Nomenclatura y Dirección', d: 'Certifica la dirección oficial del inmueble.', v: 180, p: 5000, i: 'signpost-2' }];
+    const EST = { radicada: ['Radicada', 'b-r'], en_revision: ['En revisión', 'b-v'], aprobada: ['Aprobada', 'b-a'], rechazada: ['Rechazada', 'b-x'] };
+    const mem = {};
+    const ld = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) || f } catch { return mem[k] || f } };
+    const sv = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { mem[k] = v } };
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    async function sha(t) { try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('') } catch { let h = 5381; for (const c of t) h = (h * 33 ^ c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(64, '0') } }
+    const fmt = d => new Date(d).toLocaleString('es-CO');
+    let users = ld('u', []), tr = ld('t', []), me = ld('s', null), feed = [], adminF = '', selCode = '', modalRad = '';
+    const bc = window.BroadcastChannel ? new BroadcastChannel('alcaldia') : null;
+    function toast(m, ic) { const e = document.createElement('div'); e.className = 'toast'; e.innerHTML = '<i class="bi bi-' + (ic || 'bell-fill') + '"></i>' + esc(m); $('#toasts').append(e); setTimeout(() => e.remove(), 4500) }
+    function log(m) { feed.unshift(fmt(Date.now()) + ' — ' + m); $('#feed').innerHTML = feed.map(x => '<div>' + esc(x) + '</div>').join('') || '<div>Esperando actividad...</div>' }
+    function save(ev) { sv('u', users); sv('t', tr); bc && bc.postMessage(ev || {}) }
+    function al(el, t, m) { el.className = 'al ' + t; el.textContent = m }
+    function qrSvg(txt) { try { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }) } catch { return '<div class="mono">' + esc(txt) + '</div>' } }
+    const vurl = c => location.href.split('#')[0] + '#verificar-' + c;
+    const badge = e => `<span class="b ${EST[e][1]}">${EST[e][0]}</span>`;
+    function tab(t) { $$('.tb').forEach(b => b.classList.toggle('on', b.dataset.t === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'p-' + t)); render() }
+    $('#tabs').onclick = e => { const b = e.target.closest('.tb'); if (b) tab(b.dataset.t) };
+    $('#gologin').onclick = e => { e.preventDefault(); tab('login') };
+    // Catálogo
+    $('#catalog').innerHTML = CAT.map(c => `<article class="cat" data-c="${c.c}"><span class="tag ${c.p ? 'fee' : ''}">${c.p ? '$5.000 COP' : 'Gratuito'}</span><h5><i class="bi bi-${c.i}"></i>${c.n}</h5><p>${c.d}</p><small><i class="bi bi-clock"></i>Vigencia ${c.v} días</small></article>`).join('');
+    $('#tipo').innerHTML = '<option value="">Seleccione un trámite...</option>' + CAT.map(c => `<option value="${c.c}">${c.n}</option>`).join('');
+    function pick(c) { selCode = c; $('#tipo').value = c; $$('.cat').forEach(e => e.classList.toggle('sel', e.dataset.c === c)); steps() }
+    $('#catalog').onclick = e => { const a = e.target.closest('.cat'); if (a) { pick(a.dataset.c); $('#barrio').focus() } };
+    $('#tipo').onchange = e => pick(e.target.value);
+    function steps(done) { const s1 = !!$('#tipo').value; $('#st1').className = 'st ' + (s1 ? 'ok' : 'on'); $('#st2').className = 'st ' + (done ? 'ok' : s1 ? 'on' : ''); $('#st3').className = 'st ' + (done ? 'on' : '') }
+    $('#demo').onclick = () => { pick('CERT-RESIDENCIA'); $('#barrio').value = 'Barrio El Centro'; $('#dir').value = 'Carrera 5 # 10 - 24'; $('#obs').value = 'Requerido para trámite de subsidio.' };
+    // Radicar
+    $('#fr').onsubmit = async e => {
+      e.preventDefault(); const ra = $('#ra');
+      if (!me) { al(ra, 'er', 'Debe iniciar sesión para radicar.'); return tab('login') }
+      const c = CAT.find(x => x.c === $('#tipo').value); if (!c) return al(ra, 'er', 'Seleccione un trámite.');
+      const fecha = new Date().toISOString(), n = Math.floor(10000 + Math.random() * 90000); let rad = 'RAD-2026-' + n; while (tr.some(t => t.rad === rad)) rad = 'RAD-2026-' + Math.floor(10000 + Math.random() * 90000);
+      const qr = 'QR-ALCALDIA-' + [...crypto.getRandomValues(new Uint8Array(8))].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+      const t = { rad, cod: c.c, tipo: c.n, vig: c.v, uid: me.id, ciu: me.nombre, doc: me.doc, barrio: $('#barrio').value.trim(), dir: $('#dir').value.trim(), obs: $('#obs').value.trim(), fecha, estado: 'radicada', motivo: '', qr, hist: [{ e: 'radicada', f: fecha }] };
+      t.hash = await sha([t.rad, t.qr, t.cod, t.dir, t.fecha].join('|')); tr.unshift(t); save({ k: 'new', rad, ciu: t.ciu }); log('Nueva solicitud ' + rad + ' de ' + t.ciu);
+      al(ra, 'ok', '¡Solicitud radicada con éxito!'); steps(true);
+      $('#rec').className = 'rec pr'; $('#rec').innerHTML = `<div><h4>Constancia Oficial de Radicación — Ley 527 de 1999</h4>
+<div class="kv"><span>Radicado</span><span>${t.rad}</span></div><div class="kv"><span>Certificado</span><span>${esc(t.tipo)}</span></div>
+<div class="kv"><span>Estado inicial</span><span>${badge('radicada')}</span></div><div class="kv"><span>Fecha y hora</span><span>${fmt(t.fecha)}</span></div>
+<div class="kv"><span>Código de verificación</span><span class="mono">${t.qr}</span></div>
+<button class="btn" onclick="window.print()"><i class="bi bi-printer-fill"></i> Imprimir / Guardar PDF</button><button class="btn s" data-cp="${t.rad}"><i class="bi bi-clipboard-check"></i> Copiar radicado</button><button class="btn s" data-go="${t.rad}"><i class="bi bi-search"></i> Rastrear en vivo</button></div>
+<div class="qr">${qrSvg(vurl(t.qr))}<div>ESCANEAR PARA VALIDAR</div></div>`;
+      e.target.reset(); $('#tipo').value = ''; $$('.cat').forEach(x => x.classList.remove('sel')); render(); $('#rec').scrollIntoView({ behavior: 'smooth' })
+    };
+    document.addEventListener('click', e => {
+      const cp = e.target.closest('[data-cp]'), go = e.target.closest('[data-go]');
+      if (cp) { (navigator.clipboard ? navigator.clipboard.writeText(cp.dataset.cp) : Promise.reject()).then(() => toast('Radicado copiado')).catch(() => toast('Radicado: ' + cp.dataset.cp)) }
+      if (go) { $('#qrad').value = go.dataset.go; tab('consultar'); consultar() }
+    });
+    // Detalle
+    function detalle(t) {
+      return `<div class="card" style="margin-top:14px"><div class="rec" style="border-color:var(--pr)"><div>
+<div class="kv"><span>Radicado</span><span>${t.rad}</span></div><div class="kv"><span>Trámite</span><span>${esc(t.tipo)}</span></div>
+<div class="kv"><span>Estado</span><span>${badge(t.estado)}</span></div><div class="kv"><span>Predio</span><span>${esc(t.dir)} (${esc(t.barrio)})</span></div>
+<div class="kv"><span>Radicado el</span><span>${fmt(t.fecha)}</span></div>${t.motivo ? `<div class="kv"><span>Motivo de rechazo</span><span>${esc(t.motivo)}</span></div>` : ''}
+<h4>Historial</h4>${t.hist.map(h => `<div class="kv"><span>${EST[h.e][0]}</span><span>${fmt(h.f)}</span></div>`).join('')}
+<button class="btn" onclick="window.print()"><i class="bi bi-printer-fill"></i> Imprimir</button></div><div class="qr">${qrSvg(vurl(t.qr))}<div class="mono">${t.qr}</div></div></div></div>`
+    }
+    function consultar() {
+      const v = $('#qrad').value.trim().toUpperCase(), t = tr.find(x => x.rad === v), r = $('#rcon'); r.className = '';
+      r.innerHTML = t ? detalle(t) : '<div class="al er">No se encontró el radicado "' + esc(v) + '".</div>'
+    }
+    $('#bcon').onclick = consultar; $('#qrad').onkeydown = e => e.key === 'Enter' && consultar();
+    // Verificar
+    async function verificar() {
+      let v = $('#qqr').value.trim(); const m = v.match(/QR-ALCALDIA-[0-9A-Fa-f]{16}/); if (m) v = m[0]; v = v.toUpperCase(); const t = tr.find(x => x.qr === v), r = $('#rver'); r.className = '';
+      if (!t) { r.innerHTML = '<div class="al er"><i class="bi bi-x-circle-fill"></i> Código inválido: no corresponde a ningún certificado emitido.</div>'; return }
+      const h = await sha([t.rad, t.qr, t.cod, t.dir, t.fecha].join('|')), ok = h === t.hash;
+      const exp = new Date(new Date(t.fecha).getTime() + t.vig * 864e5), vig = exp > new Date();
+      let msg = !ok ? ['er', '<i class="bi bi-x-octagon-fill"></i> El certificado fue alterado: el hash no coincide.'] : t.estado === 'aprobada' ? (vig ? ['ok', '<i class="bi bi-patch-check-fill"></i> Certificado AUTÉNTICO, aprobado y vigente.'] : ['er', '<i class="bi bi-exclamation-triangle-fill"></i> Certificado auténtico pero VENCIDO.']) : ['er', '<i class="bi bi-exclamation-triangle-fill"></i> Auténtico, pero la solicitud está ' + EST[t.estado][0] + ' (aún no es un certificado válido).'];
+      r.innerHTML = `<div class="al ${msg[0]}">${msg[1]}</div><div class="card" style="margin-top:12px"><div class="kv"><span>Radicado</span><span>${t.rad}</span></div><div class="kv"><span>Trámite</span><span>${esc(t.tipo)}</span></div><div class="kv"><span>Titular</span><span>${esc(t.ciu)}</span></div><div class="kv"><span>Estado</span><span>${badge(t.estado)}</span></div><div class="kv"><span>Vence</span><span>${exp.toLocaleDateString('es-CO')}</span></div><div class="kv"><span>SHA-256</span><span class="mono" style="font-size:.7rem">${h}</span></div></div>`
+    }
+    $('#bver').onclick = verificar; $('#qqr').onkeydown = e => e.key === 'Enter' && verificar();
+    // Auth
+    function setUser(u) { me = u ? { id: u.id, nombre: u.nombre, doc: u.doc, email: u.email, rol: u.rol } : null; sv('s', me); ui() }
+    function ui() {
+      const f = me && me.rol === 'funcionario'; $('#up').classList.toggle('hidden', !me); $('#tlogin').classList.toggle('hidden', !!me); $('#tadmin').classList.toggle('hidden', !f);
+      if (me) { $('#un').textContent = me.nombre; $('#ur').textContent = f ? 'Funcionario' : 'Ciudadano' } $('#nauth').classList.toggle('hidden', !!me); render()
+    }
+    $('#fl').onsubmit = async e => {
+      e.preventDefault(); const em = $('#le').value.trim().toLowerCase(), h = await sha($('#lp').value), u = users.find(x => x.email === em && x.pass === h);
+      if (!u) return al($('#la'), 'er', 'Credenciales incorrectas.'); setUser(u); e.target.reset(); $('#la').className = 'al hidden'; toast('Bienvenido, ' + u.nombre); tab(u.rol === 'funcionario' ? 'admin' : 'radicar')
+    };
+    $('#fill').onclick = () => { $('#le').value = 'funcionario@alcaldia.gov.co'; $('#lp').value = 'Alcaldia2026*' };
+    $('#fg').onsubmit = async e => {
+      e.preventDefault(); const em = $('#ge').value.trim().toLowerCase(), d = $('#gd').value.trim();
+      if (users.some(u => u.email === em || u.doc === d)) return al($('#ga'), 'er', 'Ya existe una cuenta con ese correo o cédula.');
+      const u = { id: 'U' + Date.now(), nombre: $('#gn').value.trim(), doc: d, email: em, pass: await sha($('#gp').value), rol: 'ciudadano' }; users.push(u); save(); setUser(u); e.target.reset(); $('#ga').className = 'al hidden'; toast('Cuenta creada. ¡Bienvenido!'); tab('radicar')
+    };
+    $('#out').onclick = () => { setUser(null); toast('Sesión cerrada'); tab('radicar') };
+    // Tablas
+    const acc = t => `<button class="btn sm s" data-go="${t.rad}">Ver / QR</button>`;
+    function render() {
+      $('#s0').innerHTML = '<i class="bi bi-collection"></i>' + tr.length + ' Trámites'; $('#s1').innerHTML = '<i class="bi bi-check-circle"></i>' + tr.filter(t => t.estado === 'aprobada').length + ' Aprobados'; $('#s2').innerHTML = '<i class="bi bi-hourglass-split"></i>' + tr.filter(t => t.estado === 'en_revision').length + ' En revisión'; $('#s3').innerHTML = '<i class="bi bi-inbox"></i>' + tr.filter(t => t.estado === 'radicada').length + ' Radicados';
+      const mine = me ? tr.filter(t => t.uid === me.id) : [], f = $('#fest').value, q = $('#qmis').value.toLowerCase();
+      const L = mine.filter(t => (!f || t.estado === f) && (t.rad + t.dir + t.barrio).toLowerCase().includes(q));
+      $('#tmis').innerHTML = !me ? '<tr><td colspan=6>Inicie sesión para ver sus trámites.</td></tr>' : L.length ? L.map(t => `<tr><td>${t.rad}</td><td>${esc(t.tipo)}</td><td>${esc(t.dir)}</td><td>${fmt(t.fecha)}</td><td>${badge(t.estado)}</td><td>${acc(t)}</td></tr>`).join('') : '<tr><td colspan=6>Sin solicitudes.</td></tr>';
+      if (me && me.rol === 'funcionario') {
+        const c = k => tr.filter(t => t.estado === k).length; $('#m0').textContent = tr.length; $('#m1').textContent = c('radicada'); $('#m2').textContent = c('en_revision'); $('#m3').textContent = c('aprobada'); $('#m4').textContent = c('rechazada');
+        const aq = $('#qadm').value.toLowerCase(), A = tr.filter(t => (!adminF || t.estado === adminF) && (t.rad + t.ciu + t.doc + t.dir + t.barrio).toLowerCase().includes(aq));
+        $('#tadm').innerHTML = A.length ? A.map(t => `<tr><td>${t.rad}</td><td>${esc(t.ciu)}<br><small>${esc(t.doc)}</small></td><td>${esc(t.tipo)}</td><td>${esc(t.dir)}</td><td>${fmt(t.fecha)}</td><td>${badge(t.estado)}</td><td><button class="btn sm" data-m="${t.rad}">Gestionar</button></td></tr>`).join('') : '<tr><td colspan=7>Sin solicitudes.</td></tr>'
+      }
+    }
+    ['#fest', '#qmis', '#qadm'].forEach(s => $(s).oninput = render);
+    $('#aq').onclick = e => { const s = e.target.closest('span'); if (!s) return; adminF = s.dataset.f; $$('#aq span').forEach(x => x.classList.toggle('on', x === s)); render() };
+    $('#clr').onclick = () => { feed = []; log('Feed limpiado'); feed = []; $('#feed').innerHTML = '<div>Esperando actividad...</div>' };
+    // Modal
+    function mm() { $('#mmg').classList.toggle('hidden', $('#mne').value !== 'rechazada') }
+    $('#mne').onchange = mm;
+    document.addEventListener('click', e => {
+      const b = e.target.closest('[data-m]'); if (!b) return; const t = tr.find(x => x.rad === b.dataset.m); modalRad = t.rad;
+      $('#mi').innerHTML = `Radicado <b>${t.rad}</b><br>Ciudadano: <b>${esc(t.ciu)}</b><br>Estado actual: ${badge(t.estado)}`; $('#mne').value = 'en_revision'; $('#mm').value = ''; $('#mal').className = 'al er hidden'; mm(); $('#mo').classList.remove('hidden')
+    });
+    $('#mc').onclick = () => $('#mo').classList.add('hidden');
+    $('#mk').onclick = () => {
+      const t = tr.find(x => x.rad === modalRad), n = $('#mne').value, mo = $('#mm').value.trim();
+      if (n === 'rechazada' && !mo) return al($('#mal'), 'er', 'Indique el motivo del rechazo.');
+      t.estado = n; t.motivo = n === 'rechazada' ? mo : ''; t.hist.push({ e: n, f: new Date().toISOString() }); save({ k: 'est', rad: t.rad, uid: t.uid, e: n });
+      log(t.rad + ' → ' + EST[n][0]); toast(t.rad + ' ahora está: ' + EST[n][0]); $('#mo').classList.add('hidden'); render()
+    };
+    // CSV
+    $('#csv').onclick = () => {
+      const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"', rows = [['Radicado', 'Ciudadano', 'Cédula', 'Trámite', 'Barrio', 'Dirección', 'Fecha', 'Estado', 'Código QR']].concat(tr.map(t => [t.rad, t.ciu, t.doc, t.tipo, t.barrio, t.dir, t.fecha, EST[t.estado][0], t.qr]));
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' })); a.download = 'solicitudes.csv'; a.click(); toast('CSV exportado')
+    };
+    // Tiempo real
+    function sync(m) {
+      users = ld('u', []); tr = ld('t', []); me = ld('s', null); const d = m || {};
+      if (d.k === 'new') { log('Nueva solicitud ' + d.rad + ' de ' + d.ciu); if (me && me.rol === 'funcionario') toast('Nueva solicitud ' + d.rad, 'inbox-fill') }
+      if (d.k === 'est') { log(d.rad + ' → ' + EST[d.e][0]); if (me && me.id === d.uid) toast('Su solicitud ' + d.rad + ' cambió a: ' + EST[d.e][0]) } ui()
+    }
+    bc && (bc.onmessage = e => sync(e.data)); addEventListener('storage', e => { if (e.key === 't' || e.key === 'u') sync() });
+    // Init
+    (async () => {
+      if (!users.some(u => u.rol === 'funcionario')) { users.push({ id: 'U0', nombre: 'Funcionario Municipal', doc: '1000000', email: 'funcionario@alcaldia.gov.co', pass: await sha('Alcaldia2026*'), rol: 'funcionario' }); sv('u', users) }
+      steps(); ui();
+      const h = location.hash.match(/verificar-(QR-ALCALDIA-[0-9A-Fa-f]{16})/i); if (h) { $('#qqr').value = h[1]; tab('verificar'); verificar() }
+    })();
+  </script>
 </body>
+
 </html>

@@ -1,0 +1,79 @@
+@startuml clases_ciudadano_solicitud_certificado
+title Diagrama de Clases — Ciudadano · Solicitud · Certificado
+skinparam classAttributeIconSize 0
+
+enum EstadoSolicitud {
+  RADICADA
+  EN_REVISION
+  APROBADA
+  RECHAZADA
+  CANCELADA
+}
+
+enum EstadoCertificado {
+  VIGENTE
+  VENCIDO
+  ANULADO
+}
+
+class Ciudadano <<usuarios>> {
+  + id : int <<PK>>
+  + nombre : varchar(120)
+  + documento_identidad : varchar(30) <<UK>>
+  + email : varchar(160) <<UK>>
+  + password_hash : varchar(255)
+  + telefono : varchar(30)
+  + activo : boolean
+  --
+  + radicarSolicitud()
+}
+
+class TipoTramite <<tipos_tramite>> {
+  + id : int <<PK>>
+  + codigo : varchar(30) <<UK>>
+  + nombre : varchar(120)
+  + vigencia_dias : int {> 0}
+  + activo : boolean
+}
+
+class Solicitud <<solicitudes_tramite>> {
+  + id : int <<PK>>
+  + radicado : varchar(35) <<UK>>
+  + usuario_id : int <<FK>>
+  + tipo_tramite_id : int <<FK>>
+  + direccion_predio : varchar(180)
+  + estado : EstadoSolicitud
+  + motivo_rechazo : text
+  + activo : boolean
+  + created_at : timestamp
+  --
+  + aprobar()
+  + rechazar(causal)
+}
+
+class Certificado <<certificados>> {
+  + id : int <<PK>>
+  + solicitud_id : int <<FK, UK>>
+  + numero_certificado : varchar(35) <<UK>>
+  + codigo_verificacion_qr : varchar(100) <<UK>>
+  + hash_sha256 : char(64)
+  + fecha_expedicion : timestamp
+  + fecha_vencimiento : date
+  + estado : EstadoCertificado
+  + activo : boolean
+  --
+  + verificar() : boolean
+  + anular()
+}
+
+Ciudadano "1" -- "0..*" Solicitud : radica >
+TipoTramite "1" -- "0..*" Solicitud : tipifica >
+Solicitud "1" -- "0..1" Certificado : genera >
+Solicitud ..> EstadoSolicitud
+Certificado ..> EstadoCertificado
+
+note bottom of Certificado
+  UNIQUE(solicitud_id): una solicitud
+  produce como máximo un certificado.
+end note
+@enduml

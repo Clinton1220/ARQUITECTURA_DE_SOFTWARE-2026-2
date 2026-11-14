@@ -1,312 +1,741 @@
-# Documento de Arquitectura de Software (DAS / SAD)
-## Plantilla oficial para proyectos individuales — arc42 simplificado + Modelo C4 + ADRs + Corte Vertical
-
-**Curso:** Arquitectura de Software / Ingeniería de Software  
-**Modalidad:** Proyecto individual  
-**Estudiante:** Juan Pérez (Estudiante de Ingeniería de Software)  
-**Proyecto:** Sistema de Gestión y Emisión Digital de Trámites y Certificados 24/7 (Caso 2: Alcaldía Municipal)  
-**Versión del documento:** 1.0 — **Fecha:** 17 / 09 / 2026  
+# Documento de Arquitectura de Software (DAS)
+## Sistema de Gestión y Emisión Digital de Trámites y Certificados 24/7 (Caso 2: Alcaldía Municipal)
 
 ---
 
-## SECCIÓN 1: INTRODUCCIÓN Y DRIVERS ARQUITECTÓNICOS
+### Portada
 
-### 1.1 Visión general del negocio y alcance
-
-#### Problema de negocio
-La Alcaldía Municipal gestiona actualmente la expedición de certificados oficiales (residencia, paz y salvo tributario, entre otros) mediante una aplicación monolítica de escritorio desarrollada en el año 2009. Dicha solución se ejecuta en un único servidor físico ubicado bajo el escritorio del secretario de despacho, careciendo de esquema de redundancia, respaldos automatizados o alta disponibilidad.
-
-El sistema experimenta bloqueos y congelamientos continuos que únicamente pueden ser subsanados por un funcionario específico que conoce el procedimiento manual de reinicio. Con una demanda promedio de ~200 trámites semanales y operación restringida estrictamente a horario de oficina matutino, los ciudadanos se ven forzados a realizar filas presenciales desde las 5:00 a. m. Cuando el sistema colapsa a media jornada, los usuarios pierden su turno y deben regresar en días posteriores. Esta situación derivó en una queja formal interpuesta por la Personería Municipal y en una fuerte presión social y comunitaria por digitalización y transparencia.
-
-#### Propuesta de solución
-> "El sistema permite a los ciudadanos radicar solicitudes y consultar certificados oficiales en línea las 24 horas del día, los 7 días de la semana, para eliminar las filas presenciales de madrugada, garantizar disponibilidad continua del servicio público y asegurar trazabilidad inmutable ante entes de control."
-
-#### Alcance del proyecto individual (in-scope)
-1. **Portal Web Ciudadano 24/7:** Interfaz de acceso público para radicación de solicitudes del Certificado de Residencia (Corte Vertical) y consulta del estado del trámite en tiempo real mediante código de radicado único.
-2. **Módulo de Gestión Administrativa:** Panel para funcionarios de la Secretaría de Gobierno que permite listar, revisar y cambiar el estado del trámite (radicada, en revisión, aprobada, rechazada).
-3. **Módulo de Verificación Digital y Autenticidad QR:** Servicio público de validación que comprueba la vigencia y autenticidad del certificado emitido mediante código QR y hash de validación criptográfica.
-4. **Capa de Servicios Backend API REST:** Arquitectura en N-Capas con autenticación sin estado mediante JSON Web Tokens (JWT) y control de acceso basado en roles (RBAC: Ciudadano, Funcionario, Administrador).
-5. **Persistencia Relacional y Trazabilidad:** Base de datos relacional con integridad referencial estricta, restricciones CHECK y UNIQUE, soporte de borrado lógico (`activo = false`) y bitácora inmutable de auditoría para entes de control.
-6. **Infraestructura Contenedorizada:** Definición de despliegue mediante Docker y Docker Compose con reinicio automático ante fallos y aislamiento de red.
-
-#### Fuera de alcance (out-of-scope)
-- **Integración con base biométrica de la Registraduría Nacional:** En esta fase se realiza validación de cédula mediante algoritmos locales y formato estándar; la interconexión con servicios web externos de la Registraduría se delega a fases posteriores.
-- **Pasarela de pagos en línea (PSE):** Los certificados prioritarios (residencia y paz y salvo) son trámites de carácter gratuito según el estatuto municipal actual.
-- **Aplicación móvil nativa (iOS / Android):** Se implementa una interfaz web responsiva (Mobile-First) accesible desde cualquier navegador móvil, evitando la duplicidad de desarrollos nativos en la fase inicial.
-- **Firma digital PKI con entidad certificadora abierta:** Se adopta código de validación seguro, código QR y hash SHA-256 institucional con validez jurídica conforme a la Ley 527 de 1999 de Colombia, postergando la contratación de tokens criptográficos PKI comerciales a la Fase 2 de licitación.
+**Título:** Sistema de Gestión y Emisión Digital de Trámites y Certificados 24/7 (Caso 2: Alcaldía Municipal)  
+**Subtítulo:** Documento de Arquitectura de Software (DAS / SAD) — arc42 simplificado + Modelo C4 + ADRs + Corte Vertical  
+**Estudiante:** Brayan Ibarguen  
+**Programa Académico:** Ingeniería de Sistemas  
+**Facultad:** Facultad de Ingenierías  
+**Institución Universitaria:** Corporación Universitaria Remington (UniRemington)  
+**Asignatura:** Arquitectura de Software  
+**Docente:** Docente Evaluador del Área de Ingeniería de Software  
+**Fecha de Entrega:** Sábado, 21 de noviembre de 2026  
+**Repositorio Oficial en GitHub:** [https://github.com/Clinton1220/ARQUITECTURA_DE_SOFTWARE-2026-2.git](https://github.com/Clinton1220/ARQUITECTURA_DE_SOFTWARE-2026-2.git)  
 
 ---
 
-### 1.2 Historias de Usuario primarias (drivers funcionales)
+### Control de Versiones
 
-| ID | Historia de usuario (Formato: Como… quiero… para…) | ¿Por qué es arquitectónicamente significativa? |
-| :--- | :--- | :--- |
-| **HU-01** *(Principal - Corte Vertical)* | **Como** ciudadano del municipio,<br>**quiero** radicar en línea mi solicitud de certificado de residencia adjuntando datos del predio y observaciones,<br>**para** obtener de inmediato un número de radicado oficial 24/7 sin madrugar ni hacer filas en la alcaldía. | **Ejercita de punta a punta todas las capas de la arquitectura:** interfaz web, transporte HTTP REST, verificación de seguridad JWT, validación de reglas de negocio contra duplicidad (HTTP 409), persistencia transaccional ACID en PostgreSQL mediante Sequelize ORM, generación de código QR y registro automático en la bitácora inmutable de auditoría. |
-| **HU-02** | **Como** funcionario de la Secretaría de Gobierno,<br>**quiero** acceder a la bandeja de trámites activos y actualizar su estado (aprobar o rechazar con causal),<br>**para** expedir el certificado oficial y dejar constancia auditable de mi decisión administrativa. | **Valida el control de acceso basado en roles (RBAC)**, la concurrencia en la base de datos, el flujo de cambio de estados en la máquina de negocio y la generación de registros inmutables de auditoría requeridos por la Personería Municipal. |
-| **HU-03** | **Como** ciudadano u organismo tercero (empresa, juzgado o entidad bancaria),<br>**quiero** escanear el código QR o digitar el radicado del certificado en el portal,<br>**para** verificar instantáneamente su autenticidad y vigencia sin requerir autenticación ni trámites en ventanilla. | **Ejercita la exposición de consultas públicas desacopladas y de alta eficiencia**, con lectura optimizada mediante índices en base de datos sin comprometer datos confidenciales protegidos por la Ley de Habeas Data. |
-
----
-
-### 1.3 Atributos de Calidad prioritarios (ISO/IEC 25010) — especificación cuantitativa
-
-| # | Atributo (ISO 25010) | Escenario de calidad (Estímulo → Entorno → Respuesta → Medida) | Métrica objetivo (medible) | ¿Cómo se verificará? |
-| :--- | :--- | :--- | :--- | :--- |
-| **AC-01** | **Seguridad** *(Confidencialidad y Control de Acceso)* | Un usuario anónimo o un atacante intenta enviar una solicitud a `POST /api/solicitudes` sin token o con un token manipulado, bajo condiciones normales de red. | El sistema rechaza el 100 % de los accesos no autorizados respondiendo **HTTP 401 Unauthorized**; ninguna contraseña se guarda en texto plano (almacenamiento mediante hash **bcrypt con salt rounds $\ge 10$**). | Ejecución de prueba automatizada en Jest/Supertest (`test 1`) y petición en colección Postman (`item 2`) verificando código 401 e inspección de hash en la tabla `usuarios`. |
-| **AC-02** | **Eficiencia de desempeño** *(Tiempo de respuesta bajo concurrencia)* | 50 ciudadanos envían peticiones concurrentes de consulta o radicación al endpoint principal de trámites en el servidor local. | El **Percentil 95 (P95)** del tiempo de respuesta es $\le 800\text{ ms}$; la tasa de errores no controlados (HTTP 500) es del 0 %. | Prueba de carga mediante herramienta de benchmarking / autocannon o JMeter contra el endpoint `/api/solicitudes`. |
-| **AC-03** | **Mantenibilidad** *(Modularidad y separación de capas)* | Un desarrollador contratista externo debe agregar un nuevo campo (ej. `estrato_socioeconomico`) a la entidad de solicitud de trámite. | El cambio se realiza modificando como **máximo 3 archivos** (`solicitudTramite.model.js`, migración DDL y controlador) sin alterar la capa de rutas, autenticación ni el frontend desacoplado. | Inspección de diff de código y revisión estricta de la estructura en N-Capas del corte vertical. |
-| **AC-04** | **Confiabilidad** *(Disponibilidad y Tolerancia a Fallos)* | El servicio backend experimenta una excepción no controlada o el proceso se termina inesperadamente en el entorno de despliegue. | El contenedor Docker o gestor de procesos reinicia automáticamente el servicio (`restart: unless-stopped`) en **menos de 10 segundos**, y el endpoint `/api/health` vuelve a reportar status `UP` sin intervención manual. | Simulación de kill de proceso en contenedor y verificación de respuesta de `/api/health`. |
+| Versión | Fecha | Autor | Descripción del Cambio | Estado |
+| :---: | :---: | :--- | :--- | :---: |
+| 1.0.0 | 17/09/2026 | Brayan Ibarguen | Versión inicial del DAS: Drivers, C4 Niveles 1 y 2, ADRs y Walking Skeleton HU-01. | Aprobada |
+| 1.5.0 | 17/10/2026 | Brayan Ibarguen | Incorporación de sustentación Clase 4 («Del diagrama a la tabla»), script DDL de certificados y modelo de funcionarios. | Aprobada |
+| 2.0.0 | 06/11/2026 | Brayan Ibarguen | Integración de WebSockets en tiempo real, catálogo interactivo de trámites y suite de pruebas automatizadas (8/8). | Aprobada |
+| 2.5.0 | 21/11/2026 | Brayan Ibarguen | Reestructuración integral según rúbrica oficial APA 7: Preguntas/supuestos, comparación de patrones, 9 tablas mínimas, 5 figuras y apéndices A–E. | Entrega Final |
 
 ---
 
-### 1.4 Restricciones
+### Tabla de Contenido
 
-| Tipo | Restricción | Origen / Justificación |
-| :--- | :--- | :--- |
-| **Técnica** | El motor de base de datos debe ser relacional, compatible con SQL estándar y de código abierto (PostgreSQL 16). | Integridad transaccional ACID estricta para certificados públicos, llaves foráneas con `ON DELETE RESTRICT` y eliminación de costos de licencias comerciales. |
-| **Técnica** | El backend debe estructurarse como una API REST que transporte exclusivamente JSON sobre HTTPS. | Desacoplamiento total entre el portal web ciudadano, la futura app móvil y los sistemas legados bajo el patrón Strangler Fig. |
-| **Operativa** | Despliegue empaquetado en contenedores Docker / Docker Compose sin incurrir en costos iniciales de nube para el estudiante. | Estandarización del entorno de ejecución, reproducibilidad en cualquier equipo de evaluación y preparación para migración a nube pública en la licitación. |
-| **De tiempo** | Corte vertical funcional y demostrable en la semana académica estipulada; entrega del DAS en formatos Word, PDF y Markdown. | Cumplimiento del calendario académico y lineamientos de evaluación del curso. |
-| **Normativa** | Tratamiento estricto de datos personales conforme a la **Ley Estatutaria 1581 de 2012 (Habeas Data Colombia)** y validez de mensajes de datos según la **Ley 527 de 1999**. | Protección de información ciudadana sensible (direcciones de predios, teléfonos, cédulas) y validez jurídica del certificado emitido digitalmente con código QR. |
-| **Administrativa**| Todo desarrollo posterior debe ceñirse al régimen de **Contratación Pública Estatal (Ley 80 de 1993 y Decreto 1082 de 2015)**. | La arquitectura no puede depender de tecnologías cautivas propietarias (vendor lock-in); debe estructurarse en especificaciones abiertas licitables por fases. |
-
----
-
-## SECCIÓN 2: ESTRATEGIA ARQUITECTÓNICA Y TECNOLÓGICA
-
-### 2.1 Patrón arquitectónico principal
-
-Se selecciona una arquitectura estructurada en **N-Capas** (Presentación / Enrutamiento Web $\rightarrow$ Middlewares de Seguridad y Validación $\rightarrow$ Controladores de Negocio $\rightarrow$ Modelos ORM $\rightarrow$ Persistencia Relacional) combinada con el patrón evolutivo **Strangler Fig (Higuera Estranguladora)**.
-
-#### Formato de justificación obligatorio:
-> "Se selecciona el patrón **N-Capas con estrategia Strangler Fig** porque los atributos de calidad prioritarios **AC-03 (Mantenibilidad)**, **AC-01 (Seguridad)** y **AC-04 (Confiabilidad)** exigen una separación estricta entre la lógica de validación municipal, la exposición pública web y el almacenamiento de datos, permitiendo desplegar de inmediato una fachada web 24/7 sin paralizar la operación histórica de la alcaldía. Se descarta una arquitectura de **Microservicios distribuidos** porque su costo en complejidad de orquestación, transacciones distribuidas y sobrecarga operativa contradice la restricción administrativa **RA-03 (equipo interno con 1 solo técnico de soporte sin perfil programador)** y la restricción de tiempo del proyecto individual."
-
-### 2.2 Pila tecnológica (Tech Stack) — tabla justificativa
-
-| Capa | Tecnología elegida | Versión | Alternativa descartada | Justificación (Conexión con AC / Restricción) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Lenguaje Backend** | JavaScript (Node.js) | 20 LTS | Java 21 / PHP | Restricción de tiempo y portabilidad. Motor asíncrono no bloqueante I/O ideal para concurrencia de consultas ciudadanas (**AC-02**). |
-| **Framework Web** | Express | 4.19.x | NestJS / Django | **AC-03 Mantenibilidad:** Estructura minimalista suficiente para implementar N-Capas sin la sobrecarga cognitiva de NestJS; acelera la ejecución del corte vertical. |
-| **ORM / Acceso a Datos**| Sequelize | 6.37.x | SQL nativo sin ORM / Prisma | **AC-03 Mantenibilidad y AC-01 Seguridad:** Modelos tipados, migraciones versionadas y protección nativa contra inyecciones SQL mediante queries parametrizados. (Ver ADR-003). |
-| **Base de Datos** | PostgreSQL | 16-alpine | MongoDB (NoSQL) | **AC-01 Integridad de Datos y Restricción Técnica:** El dominio municipal exige transacciones ACID, integridad referencial con FKs y restricciones UNIQUE para evitar radicaciones duplicadas. |
-| **Autenticación** | JWT (jsonwebtoken) + bcryptjs | 9.0.x / 2.4.x | Sesiones basadas en cookies con estado | **AC-01 Seguridad y AC-04 Confiabilidad:** Arquitectura sin estado (stateless) que facilita el balanceo en contenedores y evita pérdida de sesión al reiniciar el servidor. (Ver ADR-002). |
-| **Frontend Web** | HTML5 + CSS3 Vanilla + JS | Estándar W3C | React SPA pesada / Angular | **Alcance y Usabilidad (AC-04):** Interfaz ligera de carga inmediata en dispositivos móviles de cualquier gama ciudadana sin requerir compilación compleja ni dependencias pesadas. |
-| **Pruebas Automatizadas**| Jest + Supertest | 29.7.x / 7.0.x | Mocha / Chai | **Verificación cuantitativa de AC-01 y AC-02:** Ejecución unificada de pruebas de integración HTTP sobre las rutas de la API con generación de reportes automáticos. |
-| **Contenedores** | Docker & Docker Compose | 3.8 | Instalación nativa directa en el SO | **RT-01 y AC-04 Confiabilidad:** Erradica la dependencia del "servidor físico bajo el escritorio"; permite despliegue reproducible en un comando (`docker-compose up`). |
-
----
-
-## SECCIÓN 3: VISTAS DE ARQUITECTURA (MODELO C4 Y UML)
-
-### 3.1 Vista de Contexto — C4 Nivel 1
-
-Muestra el sistema como una caja negra, identificando los actores humanos, sistemas externos colaboradores y los protocolos de comunicación.
-
-![Diagrama de Contexto C4 Nivel 1](diagrams/c4_nivel1_contexto.png)
-
-> **Leyenda:** Nodos verdes representan actores humanos; nodo azul oscuro representa el sistema municipal a diseñar; nodos grises representan sistemas externos.  
-> **Párrafo de lectura (30 segundos):** El Sistema de Trámites y Certificados actúa como punto único de contacto digital 24/7 para el Ciudadano (quien radica y consulta sin filas), el Funcionario (quien valida y aprueba) y la Personería (que vigila la gestión). Se conecta vía HTTPS, envía notificaciones por SMTP y se articula temporalmente con la base de datos del sistema legado de 2009 bajo la estrategia de modernización Strangler Fig.
-
----
-
-### 3.2 Vista de Contenedores / Capas — C4 Nivel 2
-
-Abre la caja negra del sistema, mostrando las aplicaciones ejecutables, almacenes de datos y protocolos de comunicación.
-
-![Diagrama de Contenedores C4 Nivel 2](diagrams/c4_nivel2_contenedores.png)
-
-> **Leyenda:** Nodos celestes representan interfaces cliente; azul oscuro el backend contenedorizado; verde esmeralda la base de datos relacional; gris servicios externos.  
-> **Párrafo de lectura (30 segundos):** El usuario interactúa con el Portal Web Ciudadano, el cual envía peticiones asíncronas REST/JSON protegidas con JWT hacia la API Backend en Node.js/Express (puerto 3000). Esta procesa las reglas de negocio y persiste los datos mediante el ORM Sequelize en PostgreSQL 16 (puerto 5432) garantizando transacciones ACID.
+- **Páginas preliminares (sin número de sección)**
+  - Portada
+  - Control de versiones
+  - Tabla de contenido
+  - Lista de tablas
+  - Lista de figuras
+- **1. Introducción y drivers arquitectónicos**
+  - 1.1 Visión general del negocio y alcance
+    - 1.1.1 Problema de negocio
+    - 1.1.2 Propuesta de solución
+    - 1.1.3 Alcance y fuera de alcance
+  - 1.2 Historias de usuario arquitectónicamente significativas
+  - 1.3 Atributos de calidad prioritarios según ISO/IEC 25010
+  - 1.4 Restricciones técnicas, operativas, de tiempo y normativas
+  - 1.5 Preguntas al cliente y supuestos
+- **2. Estrategia arquitectónica y tecnológica**
+  - 2.1 Patrón arquitectónico seleccionado y patrones descartados
+  - 2.2 Pila tecnológica
+- **3. Vistas de arquitectura**
+  - 3.1 Vista de contexto (modelo C4, nivel 1)
+  - 3.2 Vista de contenedores (modelo C4, nivel 2)
+  - 3.3 Vista de dominio: diagrama de clases
+  - 3.4 Vista dinámica: diagrama de secuencia
+  - 3.5 Vista de despliegue
+- **4. Registro de decisiones de arquitectura (ADR)**
+  - 4.1 ADR-001: Adopción del Patrón N-Capas con Estrategia Strangler Fig
+  - 4.2 ADR-002: Autenticación Basada en JSON Web Tokens (JWT) Sin Estado
+  - 4.3 ADR-003: Uso de ORM Sequelize con PostgreSQL sobre SQL Nativo y NoSQL
+- **5. Corte vertical ejecutable**
+  - 5.1 Repositorio y control de versiones
+  - 5.2 Modelo físico de datos: script DDL
+  - 5.3 Implementación del CRUD punta a punta
+  - 5.4 Pruebas de la arquitectura
+  - 5.5 Instalación y ejecución
+- **6. Evaluación de la arquitectura**
+  - 6.1 Análisis de compromisos (*trade-offs*)
+  - 6.2 Puntos de sensibilidad y riesgos técnicos
+  - 6.3 Conclusión arquitectónica
+- **Referencias**
+- **Apéndices**
+  - Apéndice A. Lista de chequeo de entrega
+  - Apéndice B. Script DDL completo
+  - Apéndice C. Código fuente del corte vertical (extractos)
+  - Apéndice D. Evidencias de ejecución (Postman, pruebas y base de datos)
+  - Apéndice E. Historial de commits del repositorio
 
 ---
 
-### 3.3 Vista de Dominio / Objetos — Diagrama de Clases UML
+### Lista de Tablas
 
-Modelo de datos relacional implementado en el ORM con tipos de datos, llaves primarias, llaves foráneas, restricciones de unicidad y multiplicidades.
-
-![Diagrama de Clases UML](diagrams/uml_clases_dominio.png)
-
-> **Leyenda:** Clases de entidad con visibilidad pública (+), anotaciones de llaves (`PK`, `FK`, `UK`) y relaciones con multiplicidad cardinal.  
-> **Párrafo de lectura (30 segundos):** Un `Usuario` (ciudadano) radica de cero a muchas `SolicitudTramite`, cada una tipificada por un `TipoTramite` (ej. Certificado de Residencia). Cada solicitud posee un número de `radicado` único institucional y genera eventos inmutables en `AuditoriaTramite`. Todas las entidades de negocio cuentan con el atributo booleano `activo` para borrado lógico.
-
----
-
-### 3.4 Vista Dinámica — Diagrama de Secuencia UML
-
-Representa la interacción temporal del escenario primario principal (**HU-01: Radicación de Solicitud de Certificado**), detallando el camino feliz y dos flujos alternos obligatorios (HTTP 401 por falta de token y HTTP 409 por duplicidad).
-
-> 🔗 **Tablero interactivo:** [Abrir en Lucidchart](https://lucid.app/lucidchart/84fc9272-7cf2-46e7-b704-865ca83fc88f/edit?viewport_loc=-902%2C-522%2C2747%2C1540%2C0_0&invitationId=inv_bef8d021-b763-4f34-95da-ca8f4055b91c)
-
-![Diagrama de Secuencia UML HU-01](diagrams/uml_secuencia_hu01.png)
-
-> **Leyenda:** Flechas sólidas indican llamadas síncronas; líneas segmentadas indican respuestas; bloques `alt` delimitan caminos alternos y de excepción.  
-> **Párrafo de lectura (30 segundos):** La solicitud llega al router y pasa por el middleware de autenticación, el cual intercepta y rechaza con 401 peticiones no autorizadas. Si el token es válido, el controlador verifica que no existan trámites duplicados en curso (retornando 409 en caso de conflicto). Si los datos son válidos, crea la solicitud con número de radicado oficial, registra la bitácora inmutable en PostgreSQL y responde 201 Created al ciudadano.
+- **Tabla 1.** *Historias de usuario arquitectónicamente significativas*
+- **Tabla 2.** *Atributos de calidad prioritarios según ISO/IEC 25010*
+- **Tabla 3.** *Restricciones del proyecto*
+- **Tabla 4.** *Comparación de patrones arquitectónicos candidatos*
+- **Tabla 5.** *Pila tecnológica y justificación*
+- **Tabla 6.** *Correspondencia entre clases del dominio y tablas físicas*
+- **Tabla 7.** *Endpoints del corte vertical*
+- **Tabla 8.** *Análisis de compromisos entre atributos de calidad*
+- **Tabla 9.** *Puntos de sensibilidad y riesgos técnicos*
+- **Tabla A1.** *Lista de chequeo y matriz de cumplimiento de entrega*
 
 ---
 
-### 3.5 Vista de Despliegue
+### Lista de Figuras
 
-Diagrama físico de nodos, contenedores Docker, red virtual y mapeo de puertos y variables de entorno.
-
-![Diagrama de Despliegue UML](diagrams/uml_despliegue.png)
-
-> **Leyenda:** Cajas rectangulares representan nodos de cómputo y contenedores; cilindros representan almacenamiento y bases de datos.  
-> **Párrafo de lectura (30 segundos):** El navegador web del ciudadano se conecta mediante HTTP al puerto expuesto 3000 del contenedor `app-backend`. Este contenedor se comunica a través de la red aislada `red-alcaldia` con el contenedor `db` en el puerto 5432. Los datos se persisten de manera duradera en el volumen Docker `pgdata`, garantizando tolerancia a reinicios sin pérdida de información.
-
----
-
-## SECCIÓN 4: REGISTRO DE DECISIONES DE ARQUITECTURA (ADRs)
-
-Las decisiones clave de la arquitectura se encuentran formalizadas e inmutables en el repositorio dentro de `docs/adr/`:
-
-1. **[ADR-001: Adopción del Patrón N-Capas con Estrategia Strangler Fig](adr/ADR-001-patron-n-capas-strangler-fig.md)**
-   - *Decisión:* Implementar N-Capas con fachada web 24/7 y transición progresiva desde la app de 2009.
-   - *Justificación:* Maximiza Confiabilidad (AC-01) y Mantenibilidad (AC-03), eliminando el servidor físico bajo el escritorio sin el riesgo de un reemplazo "Big-Bang".
-2. **[ADR-002: Autenticación Basada en JSON Web Tokens (JWT) Sin Estado](adr/ADR-002-autenticacion-jwt-vs-sesiones.md)**
-   - *Decisión:* Utilizar tokens JWT con firma HMAC SHA-256 y hashing de contraseñas mediante bcrypt (factor $\ge 10$).
-   - *Justificación:* Arquitectura sin estado (stateless) que permite escalabilidad horizontal en contenedores y respuesta HTTP 401 consistente ante accesos no autorizados (AC-01 Seguridad).
-3. **[ADR-003: Uso de ORM Sequelize con PostgreSQL sobre SQL Nativo y NoSQL](adr/ADR-003-uso-orm-sequelize-postgresql.md)**
-   - *Decisión:* Persistencia relacional en PostgreSQL 16 administrada por Sequelize ORM con migraciones DDL versionadas.
-   - *Justificación:* Transacciones ACID, restricciones UNIQUE/CHECK, protección contra SQL Injection y soporte de borrado lógico (`activo = false`) para auditoría de entes de control.
+- **Figura 1.** *Vista de contexto del sistema (C4, nivel 1)*
+- **Figura 2.** *Vista de contenedores del sistema (C4, nivel 2)*
+- **Figura 3.** *Diagrama de clases del dominio*
+- **Figura 4.** *Diagrama de secuencia de la historia de usuario principal (HU-01)*
+- **Figura 5.** *Diagrama de despliegue*
 
 ---
 
-## SECCIÓN 5: ENTREGABLE DE PROGRAMACIÓN EJECUTABLE (CORTE VERTICAL)
+# 1. Introducción y drivers arquitectónicos
 
-### 5.1 Repositorio Git y Política de Commits
-El código fuente y la documentación se encuentran organizados bajo la estructura estándar:
+## 1.1 Visión general del negocio y alcance
 
-```
-alcaldia-tramites-corte-vertical/
-├── docs/
-│   ├── DAS.md                     # Documento de arquitectura en Markdown
-│   ├── DAS.docx                   # Documento oficial en formato Word
-│   ├── DAS.pdf                    # Documento oficial en formato PDF
-│   ├── adr/                       # Registros de decisiones de arquitectura
-│   │   ├── ADR-001-patron-n-capas-strangler-fig.md
-│   │   ├── ADR-002-autenticacion-jwt-vs-sesiones.md
-│   │   └── ADR-003-uso-orm-sequelize-postgresql.md
-│   └── diagrams/                  # Fuentes de diagramas PlantUML
-│       ├── c4_nivel1_contexto.puml
-│       ├── c4_nivel2_contenedores.puml
-│       ├── uml_clases_dominio.puml
-│       ├── uml_secuencia_hu01.puml
-│       └── uml_despliegue.puml
-├── db/
-│   └── migrations/
-│       └── 001_esquema_inicial.sql # DDL con PK, FK, CHECK, UNIQUE y borrado lógico
-├── src/
-│   ├── config/database.js         # Conexión Sequelize y pool de base de datos
-│   ├── models/                    # Modelos ORM (Usuario, TipoTramite, Solicitud, Auditoria)
-│   ├── controllers/               # Controladores de negocio (Auth, Solicitud CRUD)
-│   ├── routes/                    # Enrutadores Express
-│   ├── middlewares/               # Auth JWT, RBAC y Manejo centralizado de errores
-│   ├── app.js                     # Configuración de Express y middlewares
-│   └── server.js                  # Inicialización y arranque del servidor
-├── public/                        # Portal Web Ciudadano 24/7 (HTML5/CSS3/JS)
-├── tests/                         # Suite de pruebas automatizadas Jest + Supertest
-├── postman/                       # Colección oficial Postman con tests automáticos
-├── .env.example                   # Nombres de variables sin valores reales
-├── .gitignore                     # Exclusión estricta de .env y node_modules
-├── docker-compose.yml             # Orquestación de app-backend y base de datos
-├── Dockerfile                     # Construcción de imagen de producción
-├── package.json                   # Dependencias y scripts de ejecución
-└── README.md                      # Manual paso a paso de instalación y ejecución
-```
+### 1.1.1 Problema de negocio
+La Alcaldía Municipal gestionaba históricamente la expedición de certificados oficiales (residencia, paz y salvo tributario, estratificación y nomenclatura) mediante una aplicación monolítica de escritorio desarrollada en el año 2009. Dicho sistema operaba en un único computador de escritorio ubicado físicamente bajo el mueble del secretario de despacho, careciendo de redundancia, respaldos automatizados, alta disponibilidad y esquemas de contingencia ante desastres.
 
-#### Cumplimiento de la política de commits:
-- Commits frecuentes y atómicos en formato **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
-- Se garantiza un historial superior a **10 commits atómicos**.
-- **Regla de oro:** El archivo `.env` con credenciales reales nunca se versiona en Git.
+La aplicación experimentaba congelamientos y bloqueos frecuentes debido a fugas de memoria y bloqueos de concurrencia a nivel de sistema operativo. Dichas fallas solo podían ser subsanadas de manera manual por un único funcionario técnico que conocía el procedimiento empírico de reinicio. Con una demanda promedio de doscientos (~200) trámites semanales y un horario de ventanilla limitado estrictamente a la franja matutina (8:00 a. m. a 12:00 m.), los ciudadanos se veían forzados a desplazarse desde veredas y barrios periféricos para hacer filas presenciales desde las 5:00 a. m. Cuando el sistema colapsaba a media jornada, los usuarios perdían el turno y debían regresar en jornadas posteriores.
+
+Esta problemática generó reiteradas quejas formales interpuestas ante la Personería Municipal por vulneración del derecho fundamental de petición y de acceso eficiente a los servicios públicos, además de crear una fuerte presión comunitaria por modernización tecnológica y transparencia institucional.
+
+### 1.1.2 Propuesta de solución
+Se diseñó e implementó un sistema web responsivo con arquitectura desacoplada en N-Capas, asistido por el patrón evolutivo *Strangler Fig* (Higuera Estranguladora). La solución permite a la ciudadanía radicar solicitudes y consultar la autenticidad de certificados oficiales por internet las 24 horas del día, los 7 días de la semana, erradicando las filas presenciales de madrugada, garantizando la continuidad del servicio público y asegurando trazabilidad inmutable mediante bitácora de auditoría y códigos criptográficos de verificación QR.
+
+### 1.1.3 Alcance y fuera de alcance
+
+#### Alcance del proyecto (in-scope):
+1. **Portal Web Ciudadano 24/7:** Interfaz de acceso público para la radicación del Certificado de Residencia (corte vertical HU-01) y consulta del estado de trámites en tiempo real.
+2. **Módulo Administrativo para Funcionarios:** Panel de control de la Secretaría de Gobierno para listar, revisar, aprobar y rechazar solicitudes con registro de causal administrativa.
+3. **Módulo de Verificación Digital y Autenticidad QR:** Servicio público que valida la autenticidad e integridad del certificado emitido mediante código QR y hash SHA-256.
+4. **Capa Backend API REST:** Arquitectura en N-Capas con autenticación sin estado mediante JSON Web Tokens (JWT) y control de acceso basado en roles (RBAC: Ciudadano y Funcionario).
+5. **Persistencia Relacional Transaccional:** Base de datos PostgreSQL 16 con restricciones ACID, llaves foráneas con borrado restringido (`ON DELETE RESTRICT`), borrado lógico (`activo = false`) y bitácora inmutable de auditoría.
+6. **Infraestructura Contenedorizada:** Configuración en Docker y Docker Compose con red virtual aislada y volumen persistente de datos.
+
+#### Fuera de alcance (out-of-scope):
+- Integración biométrica en tiempo real con las bases de datos de la Registraduría Nacional del Estado Civil (se valida formato y algoritmo local de documento).
+- Pasarela de pagos bancarios en línea (PSE), dado que los certificados prioritarios son de carácter gratuito según el estatuto tributario municipal vigente.
+- Aplicación móvil nativa para iOS o Android (se implementa diseño web adaptable *Mobile-First* accesible desde cualquier navegador).
+- Firma digital con certificado PKI comercial emitido por entidad certificadora abierta (se adopta firma electrónica institucional con hash SHA-256 y código QR conforme a la Ley 527 de 1999).
 
 ---
 
-### 5.2 Script SQL DDL y Migraciones
-Ubicado en `db/migrations/001_esquema_inicial.sql`. Implementa:
-- Claves primarias (`SERIAL PRIMARY KEY`) en todas las tablas.
-- Claves foráneas con integridad referencial explícita (`REFERENCES usuarios(id)` y `REFERENCES tipos_tramite(id)` con `ON DELETE RESTRICT`).
-- Restricciones `CHECK`: roles permitidos `CHECK (rol IN ('ciudadano', 'funcionario', 'admin'))`, estados válidos `CHECK (estado IN ('radicada', 'en_revision', 'aprobada', 'rechazada', 'cancelada'))`, costo no negativo `CHECK (costo >= 0)`.
-- Restricciones `UNIQUE`: `email`, `documento_identidad`, `radicado` y `uq_solicitud_usuario_predio_fecha`.
-- Campo de **borrado lógico**: `activo BOOLEAN NOT NULL DEFAULT TRUE` en todas las entidades de negocio.
-- Índices justificados para búsquedas concurrentes por radicado, documento y estado.
+## 1.2 Historias de usuario arquitectónicamente significativas
 
----
+**Tabla 1**  
+*Historias de usuario arquitectónicamente significativas*
 
-### 5.3 Código Backend MVC / ORM
-El corte vertical implementa el CRUD completo de la entidad principal `SolicitudTramite`:
-- **CREATE (`POST /api/solicitudes`):** Verifica JWT, valida payload, previene duplicidad (409 Conflict), asigna número de radicado único (`RAD-2026-XXXXX`), genera código de validación QR, guarda en base de datos y crea un registro de auditoría inmutable. Retorna `201 Created`.
-- **READ (`GET /api/solicitudes`):** Filtra por `activo: true`. Si es ciudadano, limita las solicitudes a su propio `usuarioId`. Si es funcionario, permite listar todas las solicitudes activas.
-- **READ BY RADICADO (`GET /api/solicitudes/seguimiento/:radicado`):** Endpoint de consulta 24/7 sin colas.
-- **UPDATE (`PUT /api/solicitudes/:id`):** Permite actualizar observaciones o cambiar de estado con auditoría inmutable.
-- **DELETE LÓGICO (`DELETE /api/solicitudes/:id`):** Marca `activo = false` y `estado = 'cancelada'`, registrando la causal en auditoría y respondiendo `204 No Content`. La fila no se elimina físicamente de la base de datos.
-
----
-
-### 5.4 Pruebas de la Arquitectura
-
-#### a) Colección Postman (`postman/coleccion-corte-vertical.json`)
-Contiene los 6 escenarios exigidos con scripts de aserción automáticos:
-1. `POST /api/auth/login` $\rightarrow$ Retorna 200 y almacena variable `token`.
-2. `POST /api/solicitudes` sin token $\rightarrow$ Retorna 401 y valida **AC-01 Seguridad**.
-3. `POST /api/solicitudes` con token $\rightarrow$ Retorna 201 y valida radicado generado.
-4. `POST /api/solicitudes` duplicada $\rightarrow$ Retorna 409 Conflict y valida regla de negocio.
-5. `GET /api/solicitudes` $\rightarrow$ Retorna 200 y confirma presencia del registro.
-6. `DELETE /api/solicitudes/:id` $\rightarrow$ Retorna 204 y confirma borrado lógico.
-
-#### b) Pruebas de Integración (`tests/solicitud.test.js`)
-Suite automatizada con Jest y Supertest que ejecuta los 8 casos de prueba de extremo a extremo contra la base de datos.
-
----
-
-## SECCIÓN 6: EVALUACIÓN DE ARQUITECTURA Y TRADE-OFFS
-
-### 6.1 Análisis de compromisos (Trade-offs)
-
-Toda decisión de arquitectura implica un compromiso. En este proyecto se formaliza el siguiente balance:
-
-| Atributo priorizado | Atributo sacrificado | Evidencia del compromiso | ¿Por qué es aceptable en este proyecto? |
+| ID | Historia de usuario (Como... quiero... para...) | Criterios de aceptación arquitectónicos | Impacto en la arquitectura |
 | :--- | :--- | :--- | :--- |
-| **Mantenibilidad (AC-03) e Integridad de Datos** | Rendimiento máximo en consultas de alto volumen | El ORM Sequelize genera una leve sobrecarga respecto a SQL nativo y puede incurrir en consultas N+1 en relaciones anidadas. | La demanda esperada es de ~200 trámites/semana (< 50 consultas/hora en picos). El percentil P95 se mantiene holgadamente por debajo de los 800 ms (meta de AC-02), mientras que la mantenibilidad es vital para una alcaldía sin programadores de planta. |
-| **Seguridad (AC-01) y Desacoplamiento** | Simplicidad de desarrollo y velocidad inicial de codificación | Implementar middlewares de validación JWT, hashing bcrypt y manejo de roles agrega aproximadamente 4 archivos y mayor complejidad al flujo HTTP. | El sistema gestiona datos personales de ciudadanos (Ley 1581 de 2012) y emite certificados con fe pública; un fallo de confidencialidad o suplantación acarrea sanciones disciplinarias de la Procuraduría y Personería. |
-| **Confiabilidad (AC-04) y Disponibilidad 24/7** | Simplicidad de la arquitectura de datos (Estrategia Strangler Fig) | Mantener temporalmente dos interfaces (web moderna y cliente de 2009) obliga a coordinar vistas en la base de datos. | Permite erradicar las colas de madrugada de inmediato sin asumir el riesgo catastrófico de suspender los trámites municipales durante una migración radical "Big-Bang". |
+| **HU-01** | **Como** ciudadano del municipio,<br>**quiero** radicar en línea mi solicitud de certificado de residencia adjuntando datos del predio y observaciones,<br>**para** obtener de inmediato un número de radicado oficial 24/7 sin madrugar ni hacer filas en la alcaldía. | 1. Generación de radicado único oficial en formato `RAD-YYYY-XXXXX`.<br>2. Verificación previa de no duplicidad de trámite activo para el mismo predio.<br>3. Registro atómico en PostgreSQL con hash SHA-256 y código QR.<br>4. Emisión de notificación en tiempo real a funcionarios vía WebSockets. | Ejercita de punta a punta todas las capas: Presentación web, enrutador Express, middleware JWT, controlador de negocio, ORM Sequelize y persistencia ACID en PostgreSQL (Corte Vertical). |
+| **HU-02** | **Como** funcionario de la Secretaría de Gobierno,<br>**quiero** acceder a la bandeja de trámites activos y actualizar su estado (aprobar o rechazar con causal),<br>**para** expedir el certificado oficial y dejar constancia auditable de mi decisión administrativa. | 1. Acceso restringido exclusivamente a usuarios con rol `funcionario`.<br>2. Registro obligatorio del funcionario responsable y motivo en caso de rechazo.<br>3. Creación inmutable de evento en la tabla `auditoria_tramites`.<br>4. Notificación instantánea del cambio de estado al ciudadano interesado. | Valida el control de acceso basado en roles (RBAC), transacciones atómicas de actualización, consistencia de estados y comunicación bidireccional por WebSockets. |
+| **HU-03** | **Como** ciudadano u organismo tercero (juzgado, banco o empresa),<br>**quiero** consultar el código QR o digitar el radicado del certificado en el portal público,<br>**para** verificar instantáneamente su autenticidad y vigencia sin requerir inicio de sesión ni trámites presenciales. | 1. Acceso público sin cabecera de autenticación (`Authorization`).<br>2. Respuesta en tiempo menor a 500 ms mediante búsqueda indexada.<br>3. Despliegue de datos de validez legal sin exponer contraseñas ni datos sensibles protegidos por Habeas Data. | Demuestra desacoplamiento de endpoints públicos de alta eficiencia con lectura optimizada por índices sobre `radicado` y `codigo_verificacion_qr`. |
+
+*Nota.* Fuente: Elaboración propia a partir del levantamiento de requisitos del Caso 2 (Alcaldía Municipal).
 
 ---
 
-### 6.2 Puntos de sensibilidad y riesgos técnicos
+## 1.3 Atributos de calidad prioritarios según ISO/IEC 25010
 
-| # | Punto de sensibilidad | Atributo afectado | Riesgo técnico | Probabilidad / Impacto | Mitigación propuesta |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **R-01** | Conexión a base de datos sin pool dimensionado o saturación de clientes | Eficiencia de desempeño y Confiabilidad | Agotamiento de conexiones en PostgreSQL ante ráfagas concurrentes de ciudadanos radicando solicitudes. | Media / Alto | Se configuró explícitamente el pool de Sequelize (`max: 10`, `min: 0`, `acquire: 30000`, `idle: 10000`) y se validó en pruebas locales con auto-recuperación. |
-| **R-02** | Exposición o fuga del secreto de firma JWT (`JWT_SECRET`) | Seguridad y Confidencialidad | Si el secreto es filtrado, un atacante podría falsificar tokens y firmar certificados fraudulentos. | Baja / Crítico | La clave se almacena exclusivamente en variables de entorno locales, fuera de Git mediante `.gitignore`; se documenta el procedimiento de rotación de claves en el manual de despliegue. |
-| **R-03** | Restricción UNIQUE de prevención de duplicidad en solicitudes activas | Adecuación funcional | Si la regla de unicidad es demasiado estricta o permisiva, puede bloquear radicaciones legítimas o admitir duplicados. | Media / Medio | La regla de negocio se valida tanto en la capa de base de datos como en el controlador, y se documenta en el ADR-003 la condición para parametrizarla según directrices de la Secretaría. |
+**Tabla 2**  
+*Atributos de calidad prioritarios según ISO/IEC 25010*
 
----
+| # | Atributo (ISO/IEC 25010) | Escenario de calidad (Estímulo &rarr; Entorno &rarr; Respuesta) | Métrica objetivo (cuantitativa) | Método de verificación |
+| :---: | :--- | :--- | :--- | :--- |
+| **AC-01** | **Seguridad** *(Confidencialidad y Control de Acceso)* | Un usuario anónimo o un atacante envía una petición a `POST /api/solicitudes` sin token o con un token manipulado, bajo operación normal. | El sistema rechaza el **100 %** de los accesos no autorizados respondiendo **HTTP 401 Unauthorized**; ninguna contraseña se almacena en texto plano (hashing **bcrypt con factor $\ge 10$**). | Prueba automatizada en Jest/Supertest (`test 1`) y petición en colección Postman (`item 2`) verificando código 401 e inspección de hash en la tabla `usuarios`. |
+| **AC-02** | **Eficiencia de desempeño** *(Tiempo de respuesta bajo concurrencia)* | Cincuenta (50) peticiones concurrentes de radicación y consulta sobre el endpoint `/api/solicitudes` en el servidor local. | El **Percentil 95 (P95)** del tiempo de respuesta es **$\le 800\text{ ms}$**; la tasa de errores de servidor no controlados (HTTP 500) es del **0 %**. | Pruebas de carga automatizadas mediante herramientas de benchmarking (`autocannon` / `jest`) sobre los endpoints principales. |
+| **AC-03** | **Mantenibilidad** *(Modularidad y desacoplamiento)* | Un desarrollador contratista debe incorporar un nuevo atributo de negocio (ej. `estrato_socioeconomico`) en la solicitud. | El cambio se completa modificando como **máximo tres (3) archivos** (`solicitudTramite.model.js`, migración DDL y controlador) sin afectar rutas ni clientes. | Inspección de diff de código y verificación de separación estricta de responsabilidades en la arquitectura N-Capas. |
+| **AC-04** | **Confiabilidad** *(Disponibilidad y auto-recuperación)* | El proceso backend experimenta una excepción no controlada o el contenedor finaliza inesperadamente en el servidor de despliegue. | El orquestador Docker reinicia automáticamente el servicio (`restart: unless-stopped`) en **menos de diez (10) segundos**, restableciendo el estado `UP` en `/api/health`. | Simulación de finalización forzada de proceso (`docker kill` / prueba de fallos) y monitoreo de disponibilidad mediante el health check. |
 
-### 6.3 Conclusión arquitectónica
-
-La arquitectura diseñada y validada mediante el corte vertical satisface plenamente los drivers y atributos de calidad establecidos para el **Caso 2: Alcaldía Municipal**. A través de la implementación del patrón en N-Capas y la estrategia de modernización progresiva *Strangler Fig*, se logra resolver de raíz la vulnerabilidad operativa del "servidor físico bajo el escritorio del secretario", sustituyéndolo por un servicio estructurado, seguro, trazable y contenedorizado.
-
-La evidencia obtenida mediante la suite automatizada de pruebas y el portal ciudadano demuestra que:
-1. Las solicitudes se radican 24/7 asignando radicados únicos e inalterables.
-2. La seguridad mediante JWT y bcrypt garantiza confidencialidad y control RBAC.
-3. El borrado lógico y la tabla inmutable de auditoría blindan institucionalmente a la Alcaldía frente a los requerimientos de la Personería Municipal.
-
-Si este sistema evolucionara hacia producción real en la Alcaldía, los dos primeros aspectos a escalar serían:
-1. La integración de firma digital certificada con estampado cronológico oficial (PKI abierta regulada por la ONAC).
-2. El despliegue de la base de datos en un servicio gestionado de alta disponibilidad (como AWS RDS PostgreSQL o GCP Cloud SQL) con réplicas de solo lectura para la consulta masiva de códigos QR.
+*Nota.* Fuente: Adaptado de la norma internacional ISO/IEC 25010 (ISO/IEC, 2011).
 
 ---
 
-### Lista de chequeo de entrega
+## 1.4 Restricciones técnicas, operativas, de tiempo y normativas
 
-| # | Entregable | ¿Incluido? | Ubicación / Evidencia |
+**Tabla 3**  
+*Restricciones del proyecto*
+
+| Categoría | Código | Descripción de la restricción | Justificación técnica / legal |
+| :--- | :---: | :--- | :--- |
+| **Técnica** | RT-01 | Motor de base de datos relacional compatible con SQL estándar (PostgreSQL 16). | Garantizar transacciones ACID estrictas, integridad referencial con llaves foráneas (`ON DELETE RESTRICT`) y eliminación de costos por licenciamiento comercial. |
+| **Técnica** | RT-02 | Arquitectura orientada a servicios REST transportando exclusivamente JSON sobre HTTPS. | Desacoplar la interfaz web ciudadana del backend y habilitar integración futura con otros sistemas de la administración pública. |
+| **Operativa** | RO-01 | Despliegue empaquetado en contenedores Docker y Docker Compose sin costos de nube. | Estandarizar el entorno de ejecución, asegurar reproducibilidad en la evaluación y facilitar la migración a servidores institucionales o nube pública. |
+| **De tiempo** | RC-01 | Entrega final del corte vertical y documentación formal el 21 de noviembre de 2026. | Cumplimiento del calendario académico institucional de la asignatura Arquitectura de Software. |
+| **Normativa** | RN-01 | Cumplimiento de la Ley Estatutaria 1581 de 2012 (Habeas Data y Protección de Datos Personales en Colombia). | Protección y reserva legal de datos ciudadanos sensibles (direcciones de predios, teléfonos, correos y cédulas). |
+| **Normativa** | RN-02 | Validez jurídica de mensajes de datos y comercio electrónico según la Ley 527 de 1999 de Colombia. | Atribución de validez jurídica y probatoria a los certificados expedidos digitalmente con código QR y hash criptográfico. |
+| **Administrativa** | RA-01 | Sujeción al Estatuto General de Contratación Pública (Ley 80 de 1993 y Decreto 1082 de 2015). | Exigencia de licitación pública por fases; la arquitectura debe fundamentarse en software de código abierto sin dependencia cautiva de proveedores (*no vendor lock-in*). |
+| **Administrativa** | RA-02 | Operación y soporte con equipo técnico reducido (1 único funcionario de soporte técnico, RA-03). | La solución debe presentar baja complejidad de mantenimiento, descartando orquestaciones complejas de microservicios distribuidos. |
+
+*Nota.* Fuente: Requisitos y marco normativo institucional del Caso 2 (Alcaldía Municipal).
+
+---
+
+## 1.5 Preguntas al cliente y supuestos
+
+### 1.5.1 Preguntas clave formuladas a la Alcaldía y a la Personería
+1. *¿Cuál es el volumen esperado de solicitudes en días pico?*  
+   **Respuesta institucional:** La alcaldía atiende en promedio 200 trámites semanales. En jornadas de alta afluencia (inicios de año escolar o subsidios), el pico alcanza 60 solicitudes por día laboral concentradas en la mañana.
+2. *¿Los certificados oficiales conllevan algún costo tributario para el ciudadano?*  
+   **Respuesta institucional:** El Certificado de Residencia y el de Paz y Salvo son gratuitos por disposición del estatuto municipal; el Certificado de Nomenclatura tiene una tasa administrativa de $5.000 COP, pero en esta primera fase del corte vertical se prioriza el trámite gratuito de residencia.
+3. *¿Cuánto tiempo debe conservarse el historial de trámites radicados?*  
+   **Respuesta institucional:** De acuerdo con la Ley General de Archivo (Ley 594 de 2000), los actos administrativos municipales deben conservarse por un mínimo de 10 años, lo que prohíbe la eliminación física de registros.
+4. *¿Puede un ciudadano tener más de una solicitud activa para el mismo predio?*  
+   **Respuesta institucional:** No. Para evitar trámites duplicados y congestión de ventanilla, se debe bloquear toda nueva radicación si el ciudadano ya cuenta con una solicitud en estado 'radicada' o 'en_revision' para la misma dirección y trámite.
+
+### 1.5.2 Supuestos arquitectónicos adoptados
+- **Supuesto 1 (Conectividad):** Los ciudadanos disponen de navegadores modernos con soporte de estándares W3C (HTML5, JavaScript ES6) en computadores o dispositivos móviles inteligentes.
+- **Supuesto 2 (Infraestructura local):** La alcaldía dispone de un servidor local o máquina virtual con Linux/Windows capaz de ejecutar Docker Engine con al menos 2 GB de memoria RAM disponibles.
+- **Supuesto 3 (Vigencia temporal):** Todo certificado expedido tiene una vigencia predeterminada de 90 días calendario a partir de su fecha de emisión, calculada dinámicamente mediante la regla `CURRENT_DATE + vigencia_dias`.
+- **Supuesto 4 (Seguridad perimetral):** El servidor de producción estará protegido por un cortafuegos (firewall) que expondrá al público únicamente el puerto web 3000 (HTTPS), manteniendo el puerto 5432 de PostgreSQL confinado a la red interna.
+
+---
+
+# 2. Estrategia arquitectónica y tecnológica
+
+## 2.1 Patrón arquitectónico seleccionado y patrones descartados
+
+Se seleccionó el patrón arquitectónico en **N-Capas** (Presentación $\rightarrow$ Enrutamiento y Middlewares $\rightarrow$ Lógica de Negocio y Controladores $\rightarrow$ Acceso a Datos ORM $\rightarrow$ Persistencia Relacional) articulado con la estrategia de modernización evolutiva **Strangler Fig** (Fowler, 2004).
+
+**Formato de justificación obligatorio:**
+> Se selecciona el patrón **N-Capas con estrategia Strangler Fig** porque los atributos de calidad prioritarios **AC-03 (Mantenibilidad)**, **AC-01 (Seguridad)** y **AC-04 (Confiabilidad)** exigen una separación estricta entre la lógica de validación municipal, la exposición pública web y el almacenamiento de datos, permitiendo desplegar de inmediato una fachada web 24/7 sin paralizar la operación histórica de la alcaldía. Se descarta una arquitectura de **Microservicios distribuidos** porque su costo en complejidad de orquestación, transacciones distribuidas y sobrecarga operativa contradice la restricción administrativa **RA-02 / RA-03 (equipo interno con un solo técnico de soporte sin perfil programador)** y la restricción de tiempo del proyecto individual.
+
+**Tabla 4**  
+*Comparación de patrones arquitectónicos candidatos*
+
+| Criterio de evaluación | Patrón N-Capas + Strangler Fig (Seleccionado) | Microservicios distribuidos (Descartado) | Monolito tradicional no estructurado (Descartado) | Arquitectura Hexagonal / Puertos y Adaptadores (Descartado) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Mantenibilidad (AC-03)** | **Alta:** Capas desacopladas; cambios en base de datos o interfaz no rompen controladores. | **Media-Alta:** Servicios independientes, pero complejidad en contratos inter-servicio. | **Baja:** Alto acoplamiento espagueti; un cambio colapsa módulos no relacionados. | **Muy Alta:** Aislamiento absoluto del dominio; alta sobrecarga de boilerplate para CRUDs. |
+| **Confiabilidad (AC-04)** | **Alta:** Fachada independiente que protege la persistencia; auto-reinicio en < 10 s. | **Baja-Media:** Riesgo de fallas en cascada y dependencia de orquestadores de red complejos. | **Muy Baja:** Si la aplicación falla, se cae todo el despacho físico (situación de 2009). | **Alta:** Alta robustez, pero exige infraestructura similar a N-Capas. |
+| **Sobrecarga operativa (RA-02)** | **Baja:** Despliegue en 2 contenedores (`backend` y `db`); administrable por 1 técnico. | **Muy Alta:** Exige API Gateway, service mesh, logs distribuidos y monitoreo continuo. | **Muy Baja:** Un único ejecutable, pero mantenimiento correctivo traumático. | **Media:** Mayor cantidad de clases e interfaces abstractas por entidad. |
+| **Integridad transaccional (AC-01)** | **Máxima:** Transacciones ACID nativas en un único motor relacional PostgreSQL. | **Compleja:** Exige consistencia eventual mediante patrones Saga o compensaciones. | **Media:** Dependiente de la base de datos local sin validaciones de concurrencia. | **Máxima:** Dependiente del adaptador de persistencia configurado. |
+| **Viabilidad contractual (RA-01)** | **Excelente:** Permite licitación por fases (Fase 1: Web; Fase 2: QR; Fase 3: Desmonte legado). | **Baja:** Costos desproporcionados para el presupuesto de un municipio intermedio. | **Nula:** Perpetúa el software obsoleto sin modernización tecnológica. | **Media:** Curva de aprendizaje empinada para contratistas municipales genéricos. |
+| **Decisión final** | **SELECCIONADO** | **RECHAZADO** | **RECHAZADO** | **RECHAZADO** |
+
+*Nota.* Fuente: Elaboración propia fundamentada en los principios de evaluación de arquitectura de Bass et al. (2021).
+
+---
+
+## 2.2 Pila tecnológica
+
+**Tabla 5**  
+*Pila tecnológica y justificación*
+
+| Capa arquitectónica | Tecnología seleccionada | Versión | Alternativa descartada | Justificación técnica (Conexión con AC y Restricciones) |
+| :--- | :--- | :---: | :--- | :--- |
+| **Lenguaje Backend** | JavaScript (Node.js) | 20 LTS | Java 21 / PHP 8 | Motor asíncrono no bloqueante I/O ideal para concurrencia de consultas ciudadanas (**AC-02**); portabilidad y ejecución ligera en Docker. |
+| **Framework Web** | Express.js | 4.19.x | NestJS / Django | Estructura minimalista suficiente para N-Capas sin sobrecarga cognitiva; facilita la mantenibilidad por contratistas externos (**AC-03**). |
+| **ORM / Acceso a Datos** | Sequelize ORM | 6.37.x | TypeORM / SQL nativo en crudo | Modelos estructurados, migraciones versionadas y protección nativa contra inyecciones SQL mediante consultas parametrizadas (**AC-01**). |
+| **Base de Datos** | PostgreSQL | 16-alpine | MongoDB / MySQL | Motor relacional robusto con transacciones ACID, integridad referencial estricta (`ON DELETE RESTRICT`) e índices parciales para unicidad condicional (**RT-01**). |
+| **Autenticación** | JWT (jsonwebtoken) + bcryptjs | 9.0.x / 2.4.x | Sesiones basadas en cookies con estado | Arquitectura sin estado (*stateless*) que facilita escalabilidad horizontal en contenedores y respuesta consistente HTTP 401 (**AC-01**). |
+| **Comunicación en Vivo** | Socket.io (WebSockets) | 4.8.x | Polling HTTP repetitivo | Transmisión bidireccional instantánea de cambios de estado hacia ciudadanos y funcionarios sin saturar la red con peticiones cíclicas (**AC-02**). |
+| **Frontend Web** | HTML5 + CSS3 Vanilla + JS | W3C Standard | React SPA / Angular | Interfaz ligera de carga inmediata en dispositivos móviles ciudadanos de cualquier gama sin transpilación ni bundles pesados (**AC-02**). |
+| **Pruebas Automatizadas** | Jest + Supertest | 29.7.x / 7.0.x | Mocha + Chai | Suite unificada de pruebas de integración HTTP que verifica formalmente los 8 escenarios arquitectónicos de calidad (**AC-01** y **AC-02**). |
+| **Contenedores** | Docker & Docker Compose | 3.8 | Instalación nativa directa en SO | Despliegue reproducible en cualquier máquina con un solo comando (`docker-compose up`); reinicio automático ante fallos (**AC-04** y **RO-01**). |
+
+*Nota.* Fuente: Elaboración propia con base en el stack oficial del corte vertical.
+
+---
+
+# 3. Vistas de arquitectura
+
+## 3.1 Vista de contexto (modelo C4, nivel 1)
+
+Muestra los límites del sistema municipal, identificando los actores humanos que interactúan con él, los sistemas externos colaboradores y los protocolos de comunicación utilizados.
+
+**Figura 1**  
+*Vista de contexto del sistema (C4, nivel 1)*
+
+![Vista de contexto del sistema (C4, nivel 1)](diagrams/c4_nivel1_contexto.png)
+
+*Nota.* Diagrama de Contexto elaborado bajo el Modelo C4 (Brown, 2018). Representa a los actores Ciudadano, Funcionario y Personería interactuando con el Sistema de Trámites y Certificados, articulado con el Sistema Legado de 2009 y el Servicio de Notificaciones SMTP.
+
+> **Párrafo de lectura ejecutiva (30 segundos):**  
+> El Sistema de Trámites y Certificados actúa como punto único de contacto digital 24/7 para el Ciudadano (quien radica solicitudes y valida certificados sin desplazarse), el Funcionario (quien gestiona y emite actos administrativos desde la Secretaría de Gobierno) y la Personería Municipal (que ejerce control y vigilancia institucional). El sistema expone servicios mediante HTTPS, interactúa con un servidor SMTP para el envío de notificaciones y se acopla temporalmente a la base de datos del sistema heredado de 2009 bajo la estrategia *Strangler Fig*, garantizando una transición sin traumas operativos.
+
+---
+
+## 3.2 Vista de contenedores (modelo C4, nivel 2)
+
+Abre la frontera del sistema para evidenciar las aplicaciones ejecutables, los almacenes de datos y los protocolos de red que comunican cada contenedor.
+
+**Figura 2**  
+*Vista de contenedores del sistema (C4, nivel 2)*
+
+![Vista de contenedores del sistema (C4, nivel 2)](diagrams/c4_nivel2_contenedores.png)
+
+*Nota.* Diagrama de Contenedores del Modelo C4. Muestra el Portal Web Ciudadano (HTML5/JS), la API REST Backend (Node.js/Express) y la Base de Datos Relacional (PostgreSQL 16).
+
+> **Párrafo de lectura ejecutiva (30 segundos):**  
+> El Ciudadano y el Funcionario acceden al sistema a través del Portal Web Ciudadano (interfaz ligera HTML5/CSS3/JS servida por Express). La interfaz se comunica de forma asíncrona mediante HTTPS REST (payloads JSON protegidos con JWT) y WebSockets (Socket.io) con la API Backend en Node.js 20. Esta última procesa la lógica de negocio municipal, verifica permisos RBAC y persiste las operaciones mediante el ORM Sequelize en una base de datos PostgreSQL 16 a través de conexiones TCP seguras en el puerto 5432, garantizando transacciones ACID y persistencia duradera.
+
+---
+
+## 3.3 Vista de dominio: diagrama de clases
+
+Modela la estructura lógica de los datos persistidos en el sistema, detallando atributos, tipos, visibilidad, llaves primarias (`PK`), foráneas (`FK`), restricciones de unicidad (`UK`) y relaciones cardinales.
+
+**Figura 3**  
+*Diagrama de clases del dominio*
+
+![Diagrama de clases del dominio](diagrams/uml_clases_dominio.png)
+
+*Nota.* Diagrama de Clases UML del Dominio Municipal. Muestra las clases `Ciudadano`, `TipoTramite`, `Solicitud` y `Certificado` con sus multiplicidades y enumeraciones de estado.
+
+**Tabla 6**  
+*Correspondencia entre clases del dominio y tablas físicas*
+
+| Clase del Dominio (UML) | Tabla Física en PostgreSQL | Llave Primaria (PK) | Llaves Foráneas (FK) | Restricciones de Unicidad (UNIQUE) y CHECKS | Borrado Lógico |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+| `Ciudadano` / `Usuario` | `usuarios` | `id SERIAL` | Ninguna | `UNIQUE(email)`, `UNIQUE(documento_identidad)`, `CHECK (rol IN ('ciudadano', 'funcionario', 'admin'))` | `activo` |
+| `TipoTramite` | `tipos_tramite` | `id SERIAL` | Ninguna | `UNIQUE(codigo)`, `CHECK (costo >= 0)`, `CHECK (vigencia_dias > 0)` | `activo` |
+| `Solicitud` | `solicitudes_tramite` | `id SERIAL` | `usuario_id &rarr; usuarios(id)`,<br>`tipo_tramite_id &rarr; tipos_tramite(id)` | `UNIQUE(radicado)`, índice único parcial `(usuario_id, tipo_tramite_id, direccion_predio)` para solicitudes activas; `CHECK (estado IN (...))` | `activo` |
+| `Certificado` | `certificados` | `id SERIAL` | `solicitud_id &rarr; solicitudes_tramite(id)`,<br>`funcionario_id &rarr; funcionarios(id)` | `UNIQUE(solicitud_id)`, `UNIQUE(numero_certificado)`, `UNIQUE(codigo_verificacion_qr)`, `CHECK (fecha_vencimiento > fecha_expedicion)` | `activo` |
+| `Auditoria` | `auditoria_tramites` | `id SERIAL` | `solicitud_id &rarr; solicitudes_tramite(id)`,<br>`usuario_id &rarr; usuarios(id)` | Registro inmutable; no admite modificaciones (`UPDATE`) ni borrados (`DELETE`) | N/A (Inmutable) |
+
+*Nota.* Fuente: Elaboración propia a partir de las entidades del ORM y el script DDL de migraciones.
+
+> **Párrafo de lectura ejecutiva (30 segundos):**  
+> El modelo de dominio garantiza la fe pública municipal. Un `Usuario` (con rol ciudadano) radica de cero a muchas `SolicitudTramite`, cada una tipificada por un `TipoTramite`. Una solicitud aprobada produce como máximo un único `Certificado` respaldado por la restricción física `UNIQUE(solicitud_id)`. Toda mutación de estado genera una traza en `AuditoriaTramite`. Todas las tablas principales poseen el atributo `activo BOOLEAN NOT NULL DEFAULT TRUE` para implementar borrado lógico institucional.
+
+---
+
+## 3.4 Vista dinámica: diagrama de secuencia
+
+Representa la interacción temporal entre componentes para el escenario arquitectónico crítico: **HU-01 Radicación de Certificado de Residencia 24/7**.
+
+**Figura 4**  
+*Diagrama de secuencia de la historia de usuario principal (HU-01)*
+
+![Diagrama de secuencia de la historia de usuario principal (HU-01)](diagrams/uml_secuencia_hu01.png)
+
+*Nota.* Diagrama de Secuencia UML para la HU-01. Ilustra el camino exitoso (HTTP 201) y los dos flujos alternos obligatorios: rechazo por falta de token (HTTP 401) y rechazo por solicitud duplicada activa (HTTP 409).
+
+> **Párrafo de lectura ejecutiva (30 segundos):**  
+> Cuando el ciudadano diligencia el formulario web y presiona radicar, el portal envía un `POST /api/solicitudes` con la cabecera `Authorization: Bearer <token>`. El `AuthMiddleware` intercepta la petición; si el token no existe o es apócrifo, aborta con `401 Unauthorized`. Si es válido, el `SolicitudController` consulta al ORM para verificar si ya existe un trámite activo para el mismo predio; en caso afirmativo, responde `409 Conflict`. Si no hay conflicto, abre una transacción atómica, inserta la solicitud con radicado `RAD-2026-XXXXX` y hash SHA-256, graba la auditoría inmutable, confirma el commit en PostgreSQL y retorna `201 Created` al ciudadano.
+
+---
+
+## 3.5 Vista de despliegue
+
+Modela la topología de infraestructura, servidores físicos/virtuales, contenedores Docker, redes virtuales, mapeo de puertos y volúmenes persistentes.
+
+**Figura 5**  
+*Diagrama de despliegue*
+
+![Diagrama de despliegue](diagrams/uml_despliegue.png)
+
+*Nota.* Diagrama de Despliegue UML. Ilustra el servidor Docker Host alojando los contenedores aislados `app-backend` y `db`, conectados a la red bridge `red-alcaldia` y al volumen persistente `pgdata`.
+
+> **Párrafo de lectura ejecutiva (30 segundos):**  
+> El despliegue físico se realiza sobre un nodo servidor con Docker Engine. El contenedor `app-backend` empaqueta la aplicación Node.js 20/Express y expone públicamente el puerto 3000 (HTTP y WebSockets) hacia los navegadores de los ciudadanos. Este contenedor se enlaza a través de la red virtual aislada `red-alcaldia` con el contenedor `db` (PostgreSQL 16-alpine), el cual escucha en el puerto interno 5432. Los datos transaccionales se almacenan de forma persistente en el volumen `pgdata` (`/var/lib/postgresql/data`), asegurando que ningún trámite se pierda ante reinicios o destrucción de contenedores.
+
+---
+
+# 4. Registro de decisiones de arquitectura (ADR)
+
+## 4.1 ADR-001: Adopción del Patrón N-Capas con Estrategia Strangler Fig
+
+- **Estatus:** Aceptada.
+- **Fecha:** 17 de septiembre de 2026.
+- **Contexto:** La alcaldía operaba un sistema monolítico de escritorio heredado del año 2009 en un único computador físico bajo el escritorio del secretario. Se requería digitalizar la atención 24/7 sin incurrir en los riesgos operativos catastróficos de una migración radical "Big-Bang".
+- **Decisión:** Implementar una arquitectura en N-Capas (Presentación, Rutas/Middlewares, Controladores, ORM y Base de Datos) articulada con el patrón evolutivo *Strangler Fig*. Se despliega una fachada web moderna que intercepta la radicación ciudadana, mientras que el sistema antiguo convive temporalmente hasta su desmantelamiento total en la Fase 3.
+- **Consecuencias positivas:**
+  - Desacoplamiento total y alta mantenibilidad (**AC-03**).
+  - Mitigación del riesgo contractual mediante entregas por fases licitables (**RA-01**).
+  - Independencia del hardware del despacho: si el PC viejo se apaga, la web sigue recibiendo trámites (**AC-04**).
+- **Consecuencias negativas y deuda técnica:** Coexistencia temporal de dos interfaces y necesidad de sincronizar vistas de base de datos.
+- **Mitigación:** Deuda técnica temporal controlada; en la Fase 3 se retira el software viejo al 100%.
+
+---
+
+## 4.2 ADR-002: Autenticación Basada en JSON Web Tokens (JWT) Sin Estado
+
+- **Estatus:** Aceptada.
+- **Fecha:** 17 de septiembre de 2026.
+- **Contexto:** Se requería un mecanismo de autenticación para ciudadanos y funcionarios que permitiera escalar horizontalmente en contenedores Docker y proteger los endpoints de fe pública contra accesos ilegítimos.
+- **Decisión:** Implementar autenticación sin estado (*stateless*) mediante JSON Web Tokens firmados con HMAC SHA-256 y hashing de contraseñas con bcrypt (factor de coste $\ge 10$).
+- **Consecuencias positivas:**
+  - El servidor no guarda sesiones en memoria, lo que habilita balanceo de carga sin desloguear usuarios (**AC-02**).
+  - Cumplimiento estricto del atributo de seguridad (**AC-01**), retornando HTTP 401 ante tokens manipulados.
+  - Elimina la necesidad y el costo de operar un clúster de Redis para una alcaldía intermedia.
+- **Consecuencias negativas:** Imposibilidad de invalidar un token emitido antes de su fecha de expiración sin implementar listas negras.
+- **Mitigación:** Expiración corta de tokens (8 horas) y verificación obligatoria del atributo `activo = true` en base de datos para operaciones sensibles.
+
+---
+
+## 4.3 ADR-003: Uso de ORM Sequelize con PostgreSQL sobre SQL Nativo y NoSQL
+
+- **Estatus:** Aceptada.
+- **Fecha:** 17 de septiembre de 2026.
+- **Contexto:** Se requería un motor de base de datos relacional y un mecanismo de acceso a datos que garantizara transacciones ACID, integridad referencial y protección contra inyecciones SQL.
+- **Decisión:** Adoptar PostgreSQL 16 oficial como motor relacional transaccional y el ORM Sequelize 6 para el mapeo objeto-relacional y la gestión de migraciones versionadas en código.
+- **Consecuencias positivas:**
+  - Garantía de integridad referencial y transacciones atómicas requeridas por la fe pública municipal (**AC-01**).
+  - Sanitización automática y parametrización de consultas contra ataques de SQL Injection.
+  - Facilidad de lectura y mantenibilidad del modelo de datos para contratistas futuros (**AC-03**).
+- **Consecuencias negativas:** Ligera latencia de abstracción frente a consultas SQL crudas altamente optimizadas y riesgo de consultas N+1 en relaciones mal estructuradas.
+- **Mitigación:** Uso explícito de *eager loading* (`include` con JOINs) y configuración de un pool de 10 conexiones en `database.js`.
+
+---
+
+# 5. Corte vertical ejecutable
+
+## 5.1 Repositorio y control de versiones
+
+El proyecto se gestiona bajo el estándar **Conventional Commits** en un repositorio Git alojado en GitHub.
+
+- **Estructura organizada:** Separación estricta entre documentación (`docs/`), código backend (`src/`), interfaz frontend (`public/`), base de datos (`db/`), pruebas (`tests/`) y automatización (`scripts/`).
+- **Política de ramas:** Desarrollo estructurado mediante ramas temáticas de características (`feature/`) integradas hacia la rama principal `main`.
+- **Higiene de seguridad:** El archivo `.env` con credenciales reales está estrictamente ignorado mediante `.gitignore`; se provee `.env.example` como plantilla.
+
+---
+
+## 5.2 Modelo físico de datos: script DDL
+
+Ubicado en `db/migrations/001_esquema_inicial.sql` y complementado por `002_certificados.sql`. Implementa:
+
+- **Claves primarias y foráneas:** `SERIAL PRIMARY KEY` en todas las tablas y llaves foráneas con integridad referencial explícita `ON DELETE RESTRICT` y `ON UPDATE CASCADE`.
+- **Restricciones de verificación (CHECK):**
+  - `CHECK (rol IN ('ciudadano', 'funcionario', 'admin'))`
+  - `CHECK (estado IN ('radicada', 'en_revision', 'aprobada', 'rechazada', 'cancelada'))`
+  - `CHECK (costo >= 0)` y `CHECK (vigencia_dias > 0)`
+- **Restricciones de unicidad (UNIQUE):**
+  - `UNIQUE(email)` y `UNIQUE(documento_identidad)` en `usuarios`.
+  - `UNIQUE(radicado)` en `solicitudes_tramite`.
+  - `UNIQUE(solicitud_id)` en `certificados` (garantiza que 1 solicitud produzca máx. 1 certificado).
+  - Índice único condicional `uq_solicitud_en_curso` sobre `(usuario_id, tipo_tramite_id, direccion_predio)` donde `activo = true` y `estado IN ('radicada', 'en_revision')` para evitar duplicidad de solicitudes en trámite.
+- **Borrado lógico:** Columna `activo BOOLEAN NOT NULL DEFAULT TRUE` presente en todas las entidades de negocio.
+
+---
+
+## 5.3 Implementación del CRUD punta a punta
+
+**Tabla 7**  
+*Endpoints del corte vertical*
+
+| Método | Endpoint REST | Rol / Acceso | Códigos de respuesta HTTP | Atributo de calidad validado |
+| :---: | :--- | :--- | :---: | :---: |
+| **POST** | `/api/auth/login` | Público | 200 OK, 400 Bad Request, 401 Unauthorized | **AC-01 Seguridad:** Emisión de JWT y hash bcrypt. |
+| **POST** | `/api/auth/registro` | Público | 201 Created, 400 Bad Request, 409 Conflict | **AC-01 Seguridad:** Alta de ciudadanos con validación. |
+| **POST** | `/api/solicitudes` | Ciudadano (JWT) | 201 Created, 400 Bad Request, 401 Unauthorized, 409 Conflict | **AC-01 / AC-03:** Radicación HU-01 con control de duplicidad. |
+| **GET** | `/api/solicitudes` | Autenticado (JWT) | 200 OK, 401 Unauthorized | **AC-02 Desempeño:** Listado filtrado por rol y estado. |
+| **GET** | `/api/solicitudes/seguimiento/:radicado` | Público | 200 OK, 404 Not Found | **AC-02 Desempeño:** Consulta ciudadana 24/7 sin filas. |
+| **GET** | `/api/solicitudes/verificar/:codigoQr` | Público | 200 OK, 404 Not Found | **AC-01 Integridad:** Verificación de autenticidad de fe pública. |
+| **PUT** | `/api/solicitudes/:id` | Ciudadano / Funcionario | 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found | **AC-03 Mantenibilidad:** Transición de estados y auditoría. |
+| **DELETE**| `/api/solicitudes/:id` | Autenticado (Dueño/Admin) | 204 No Content, 403 Forbidden, 404 Not Found | **AC-01 Integridad:** Borrado lógico (`activo = false`). |
+| **GET** | `/api/health` | Público | 200 OK, 503 Service Unavailable | **AC-04 Confiabilidad:** Monitoreo y auto-recuperación. |
+
+*Nota.* Fuente: Especificación de rutas de la API REST (`src/routes/solicitud.routes.js`).
+
+---
+
+## 5.4 Pruebas de la arquitectura
+
+### 5.4.1 Colección Postman (`postman/coleccion-corte-vertical.json`)
+Contiene los 6 escenarios arquitectónicos con aserciones automáticas en JavaScript:
+1. `POST /api/auth/login`: Autentica al usuario y persiste la variable global `token`.
+2. `POST /api/solicitudes` (Sin Token): Aserción de rechazo con código `401 Unauthorized` (**AC-01**).
+3. `POST /api/solicitudes` (Con Token): Radicación exitosa, aserción de `201 Created` y radicado oficial.
+4. `POST /api/solicitudes` (Duplicada): Rechazo por duplicidad con código `409 Conflict`.
+5. `GET /api/solicitudes`: Consulta exitosa con código `200 OK`.
+6. `DELETE /api/solicitudes/:id`: Confirmación de borrado lógico con código `204 No Content`.
+
+### 5.4.2 Pruebas de integración automatizadas con Jest (`tests/solicitud.test.js`)
+Suite de 8 pruebas automatizadas ejecutadas contra base de datos en memoria / SQLite:
+- **Test 1:** Rechazo sin token JWT (HTTP 401).
+- **Test 2:** Creación con radicado oficial 24/7 (HTTP 201).
+- **Test 3:** Detección y prevención de trámite duplicado (HTTP 409).
+- **Test 4:** Listado de solicitudes activas del ciudadano (HTTP 200).
+- **Test 5:** Consulta pública por radicado (HTTP 200).
+- **Test 6:** Actualización administrativa de observaciones (HTTP 200).
+- **Test 7:** Aplicación de borrado lógico conservando el registro físico (HTTP 204).
+- **Test 8:** Endpoint `/api/health` reportando estado `UP` (HTTP 200).
+
+---
+
+## 5.5 Instalación y ejecución
+
+### Prerrequisitos:
+- Node.js 18 LTS o 20 LTS.
+- Docker y Docker Compose (opcional para ejecución en contenedores).
+
+### Pasos de arranque inmediato (Modo Demostración):
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/Clinton1220/ARQUITECTURA_DE_SOFTWARE-2026-2.git
+cd ARQUITECTURA_DE_SOFTWARE-2026-2
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Configurar entorno
+cp .env.example .env
+
+# 4. Iniciar el servidor web (Modo SQLite demostración)
+npm run start:sqlite
+
+# 5. Ejecutar la suite de pruebas automatizadas
+npm test
+```
+
+### Ejecución completa en contenedores Docker:
+```bash
+docker-compose up --build
+```
+- **Portal Web Ciudadano:** `http://localhost:3000`
+- **Diapositivas y Guía de Sustentación:** `http://localhost:3000/presentacion.html`
+- **Health Check:** `http://localhost:3000/api/health`
+
+---
+
+# 6. Evaluación de la arquitectura
+
+## 6.1 Análisis de compromisos (trade-offs)
+
+**Tabla 8**  
+*Análisis de compromisos entre atributos de calidad*
+
+| Atributo priorizado | Atributo sacrificado | Evidencia en el diseño | Justificación del balance (Trade-off) |
+| :--- | :--- | :--- | :--- |
+| **Mantenibilidad (AC-03)** | Rendimiento máximo en consultas masivas | Uso del ORM Sequelize en lugar de SQL crudo altamente optimizado. | La alcaldía maneja ~200 trámites/semana; el P95 está holgadamente por debajo de los 800 ms (**AC-02**), mientras que la mantenibilidad es vital para una entidad sin programadores de planta. |
+| **Seguridad (AC-01)** | Simplicidad inicial del desarrollo | Middlewares de validación JWT, hashing bcrypt y autorización RBAC. | El sistema maneja datos personales bajo la Ley 1581 de 2012 y emite certificados con fe pública; un fallo de seguridad acarrea sanciones disciplinarias y penales. |
+| **Confiabilidad (AC-04)** | Simplicidad de la arquitectura de datos | Estrategia *Strangler Fig* con coexistencia temporal de dos interfaces. | Permite erradicar las colas de madrugada de inmediato sin asumir el riesgo inaceptable de paralizar los trámites municipales durante una migración radical "Big-Bang". |
+
+*Nota.* Fuente: Elaboración propia fundamentada en el análisis ATAM (Kazman et al., 2000).
+
+---
+
+## 6.2 Puntos de sensibilidad y riesgos técnicos
+
+**Tabla 9**  
+*Puntos de sensibilidad y riesgos técnicos*
+
+| # | Punto de sensibilidad | Atributo afectado | Riesgo técnico identificado | Nivel de riesgo | Estrategia de mitigación implementada |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| **R-01** | Conexión a base de datos y tamaño del pool | Desempeño (**AC-02**) y Confiabilidad (**AC-04**) | Agotamiento de conexiones en PostgreSQL ante picos concurrentes de radicación. | **Medio / Alto** | Se dimensionó el pool de Sequelize (`max: 10`, `min: 0`, `acquire: 30000`, `idle: 10000`) implementando el patrón Singleton en `database.js`. |
+| **R-02** | Confidencialidad del secreto de firma JWT | Seguridad (**AC-01**) | Exposición del secreto que permitiría a un atacante falsificar certificados válidos. | **Bajo / Crítico** | El secreto se carga exclusivamente desde variables de entorno locales, fuera de Git mediante `.gitignore`, documentando rotación de claves. |
+| **R-03** | Restricción de duplicidad en solicitudes activas | Adecuación funcional y Concurrencia | Bloqueo erróneo de solicitudes legítimas o admisión indebida de trámites dobles. | **Medio / Medio** | Validación doble: a nivel lógico en el controlador y a nivel físico con el índice único condicional `uq_solicitud_en_curso` en PostgreSQL. |
+
+*Nota.* Fuente: Elaboración propia a partir del análisis de riesgos técnicos de la solución.
+
+---
+
+## 6.3 Conclusión arquitectónica
+
+La arquitectura diseñada e implementada para el **Caso 2: Alcaldía Municipal** satisface rigurosamente los drivers de negocio, historias de usuario y atributos de calidad cuantitativos exigidos por la norma ISO/IEC 25010.
+
+A través del patrón en N-Capas y la estrategia *Strangler Fig*, se resolvió de raíz la vulnerabilidad del "servidor físico bajo el escritorio del secretario", sustituyéndola por una solución moderna, auditable, escalable y contenedorizada. El corte vertical HU-01 demuestra que:
+1. Las solicitudes se radican 24/7 sin colas, asignando radicados oficiales inalterables.
+2. La seguridad mediante JWT y bcrypt garantiza confidencialidad y control estricto de roles.
+3. El borrado lógico y la tabla inmutable de auditoría blindan legalmente a la Alcaldía ante los requerimientos de la Personería Municipal.
+
+Para la evolución a un entorno productivo municipal masivo, se recomienda como siguientes pasos: 1) incorporar estampado cronológico certificado por una entidad abierta acreditada por la ONAC, y 2) alojar la base de datos PostgreSQL en un servicio gestionado de alta disponibilidad con réplicas de solo lectura para la consulta masiva de códigos QR.
+
+---
+
+# Referencias
+
+- Bass, L., Clements, P., & Kazman, R. (2021). *Software Architecture in Practice* (4th ed.). Addison-Wesley Professional.
+- Brown, S. (2018). *The C4 model for visualising software architecture*. Recuperado de https://c4model.com/
+- Fowler, M. (2004). *Strangler Fig Application*. MartinFowler.com. Recuperado de https://martinfowler.com/bliki/StranglerFigApplication.html
+- International Organization for Standardization. (2011). *Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models* (ISO/IEC 25010:2011). Ginebra, Suiza: ISO.
+- Kazman, R., Klein, M., & Clements, P. (2000). *ATAM: Method for Architecture Evaluation* (CMU/SEI-2000-TR-004). Software Engineering Institute, Carnegie Mellon University.
+- Kruchten, P. (1995). The 4+1 View Model of Architecture. *IEEE Software*, 12(6), 42–50. https://doi.org/10.1109/52.469759
+- Ley 80 de 1993. Por la cual se expide el Estatuto General de Contratación de la Administración Pública. Congreso de la República de Colombia.
+- Ley 527 de 1999. Por medio de la cual se define y reglamenta el acceso y uso de los mensajes de datos, del comercio electrónico y de las firmas digitales. Congreso de la República de Colombia.
+- Ley 1581 de 2012. Por la cual se dictan disposiciones generales para la protección de datos personales (Habeas Data). Congreso de la República de Colombia.
+- Martin, R. C. (2017). *Clean Architecture: A Craftsman's Guide to Software Structure and Design*. Prentice Hall.
+- Richards, M., & Ford, N. (2020). *Fundamentals of Software Architecture: An Engineering Approach*. O'Reilly Media.
+- Sommerville, I. (2016). *Software Engineering* (10th ed.). Pearson.
+
+---
+
+# Apéndices
+
+## Apéndice A. Lista de chequeo de entrega
+
+**Tabla A1**  
+*Lista de chequeo y matriz de cumplimiento de entrega*
+
+| # | Criterio de evaluación de la rúbrica | ¿Incluido? | Ubicación / Evidencia documental |
 | :---: | :--- | :---: | :--- |
-| 1 | DAS completo (Secciones 1–6) en PDF y Word dentro de `docs/` | ☑ | `docs/DAS.pdf`, `docs/DAS.docx` y `docs/DAS.md` |
-| 2 | 3 escenarios de calidad ISO 25010 con métricas medibles | ☑ | Sección 1.3: AC-01 (Seguridad), AC-02 (Desempeño), AC-03 (Mantenibilidad), AC-04 (Confiabilidad) |
-| 3 | 5 vistas: Contexto C4 L1, Contenedores C4 L2, Clases UML, Secuencia UML, Despliegue UML | ☑ | Sección 3 (3.1 a 3.5) con diagramas, leyendas, párrafos de 30s y fuentes en `docs/diagrams/` |
-| 4 | Mínimo 1 ADR en `docs/adr/` con la plantilla oficial | ☑ | `docs/adr/ADR-001-*.md`, `ADR-002-*.md`, `ADR-003-*.md` (3 ADRs completos) |
-| 5 | Repositorio Git con $\ge 10$ commits atómicos y `.gitignore` correcto | ☑ | Historial de Git bajo estándar Conventional Commits; exclusión estricta de `.env` y `node_modules` |
-| 6 | Script SQL DDL con PK, FK, CHECK, UNIQUE y borrado lógico | ☑ | `db/migrations/001_esquema_inicial.sql` con roles check, estado check, UNIQUE y campo `activo` |
-| 7 | CRUD punta a punta ejecutable (Modelo–Controlador–Rutas–API) | ☑ | Implementado en `src/` para la entidad principal `SolicitudTramite` (HU-01) |
-| 8 | Colección Postman y pruebas de integración pasando | ☑ | `postman/coleccion-corte-vertical.json` (6 peticiones con tests) y `tests/solicitud.test.js` (Jest) |
-| 9 | `README.md` que permite instalar y ejecutar sin ayuda del autor | ☑ | `README.md` con pasos detallados de instalación, migraciones, pruebas y ejecución local/docker |
-| 10| Análisis de trade-offs y $\ge 3$ puntos de sensibilidad | ☑ | Sección 6.1 (Tabla de compromisos) y Sección 6.2 (3 riesgos con mitigación R-01 a R-03) |
+| 1 | DAS completo (Secciones 1–6) en Markdown, Word y PDF en `docs/` | **☑ Sí** | `docs/DAS.md`, `docs/DAS.docx` y `docs/DAS.pdf`. |
+| 2 | Mínimo 3 escenarios de calidad ISO/IEC 25010 medibles | **☑ Sí** | Tabla 2 (AC-01 Seguridad, AC-02 Desempeño, AC-03 Mantenibilidad, AC-04 Confiabilidad). |
+| 3 | Mínimo 5 vistas: Contexto C4 L1, Contenedores C4 L2, Clases UML, Secuencia UML, Despliegue UML | **☑ Sí** | Sección 3 (Figuras 1 a 5) con leyendas formales, diagramas en PNG y párrafos de lectura de 30 s. |
+| 4 | Mínimo 1 ADR formalizado en `docs/adr/` | **☑ Sí** | Sección 4 y carpeta `docs/adr/` con 3 ADRs completos (ADR-001, ADR-002 y ADR-003). |
+| 5 | Repositorio Git con $\ge 10$ commits atómicos y `.gitignore` | **☑ Sí** | Historial de commits en Conventional Commits; exclusión estricta de `.env` y `node_modules/`. |
+| 6 | Script SQL DDL con PK, FK, CHECK, UNIQUE y borrado lógico | **☑ Sí** | `db/migrations/001_esquema_inicial.sql` y `002_certificados.sql` con campo `activo`. |
+| 7 | CRUD punta a punta ejecutable (Modelo–Controlador–Rutas–API) | **☑ Sí** | Implementado en `src/` para la entidad `SolicitudTramite` (HU-01). |
+| 8 | Colección Postman y pruebas de integración pasando al 100 % | **☑ Sí** | `postman/coleccion-corte-vertical.json` (6 peticiones) y `tests/solicitud.test.js` (8/8 tests Jest pasando). |
+| 9 | `README.md` que permite instalar y ejecutar sin ayuda del autor | **☑ Sí** | `README.md` con manual paso a paso de ejecución con npm y Docker. |
+| 10 | Análisis de compromisos (*trade-offs*) y $\ge 3$ puntos de sensibilidad | **☑ Sí** | Tabla 8 (Análisis de compromisos) y Tabla 9 (3 riesgos técnicos con mitigación R-01 a R-03). |
+
+---
+
+## Apéndice B. Script DDL completo
+
+```sql
+-- ============================================================================
+-- SCRIPT DDL: 001_esquema_inicial.sql + 002_certificados.sql
+-- Motor: PostgreSQL 16
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(120) NOT NULL,
+    documento_identidad VARCHAR(30) NOT NULL UNIQUE,
+    email VARCHAR(160) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    rol VARCHAR(20) NOT NULL DEFAULT 'ciudadano'
+        CHECK (rol IN ('ciudadano', 'funcionario', 'admin')),
+    telefono VARCHAR(30),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tipos_tramite (
+    id SERIAL PRIMARY KEY,
+    codigo VARCHAR(30) NOT NULL UNIQUE,
+    nombre VARCHAR(120) NOT NULL,
+    descripcion TEXT,
+    costo DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (costo >= 0),
+    vigencia_dias INTEGER NOT NULL DEFAULT 90 CHECK (vigencia_dias > 0),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS solicitudes_tramite (
+    id SERIAL PRIMARY KEY,
+    radicado VARCHAR(35) NOT NULL UNIQUE,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    tipo_tramite_id INTEGER NOT NULL REFERENCES tipos_tramite(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    direccion_predio VARCHAR(180) NOT NULL,
+    barrio_vereda VARCHAR(120) NOT NULL,
+    observaciones TEXT,
+    estado VARCHAR(20) NOT NULL DEFAULT 'radicada'
+        CHECK (estado IN ('radicada', 'en_revision', 'aprobada', 'rechazada', 'cancelada')),
+    motivo_rechazo TEXT,
+    codigo_verificacion_qr VARCHAR(100) NOT NULL UNIQUE,
+    hash_documento VARCHAR(64) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_solicitud_en_curso
+    ON solicitudes_tramite (usuario_id, tipo_tramite_id, direccion_predio)
+    WHERE activo AND estado IN ('radicada', 'en_revision');
+
+CREATE TABLE IF NOT EXISTS certificados (
+    id SERIAL PRIMARY KEY,
+    solicitud_id INTEGER NOT NULL REFERENCES solicitudes_tramite(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    numero_certificado VARCHAR(35) NOT NULL UNIQUE,
+    codigo_verificacion_qr VARCHAR(100) NOT NULL UNIQUE,
+    hash_sha256 CHAR(64) NOT NULL,
+    fecha_expedicion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_vencimiento DATE NOT NULL,
+    estado VARCHAR(15) NOT NULL DEFAULT 'vigente'
+        CHECK (estado IN ('vigente', 'vencido', 'anulado')),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_certificado_solicitud UNIQUE (solicitud_id),
+    CONSTRAINT ck_vencimiento CHECK (fecha_vencimiento > fecha_expedicion::date)
+);
+
+CREATE TABLE IF NOT EXISTS auditoria_tramites (
+    id SERIAL PRIMARY KEY,
+    solicitud_id INTEGER REFERENCES solicitudes_tramite(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    usuario_id INTEGER REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    accion VARCHAR(60) NOT NULL,
+    estado_anterior VARCHAR(20),
+    estado_nuevo VARCHAR(20),
+    detalle TEXT,
+    ip_origen VARCHAR(45),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## Apéndice C. Código fuente del corte vertical (extractos)
+
+```javascript
+// src/routes/solicitud.routes.js
+const express = require('express');
+const router = express.Router();
+const solicitudCtrl = require('../controllers/solicitud.controller');
+const { authMiddleware } = require('../middlewares/auth.middleware');
+
+router.get('/seguimiento/:radicado', solicitudCtrl.obtenerPorRadicado);
+router.get('/verificar/:codigoQr', solicitudCtrl.verificarAutenticidad);
+router.get('/metricas', authMiddleware, solicitudCtrl.metricas);
+router.post('/', authMiddleware, solicitudCtrl.crear);
+router.get('/', authMiddleware, solicitudCtrl.listar);
+router.put('/:id', authMiddleware, solicitudCtrl.actualizar);
+router.delete('/:id', authMiddleware, solicitudCtrl.eliminar);
+
+module.exports = router;
+```
+
+---
+
+## Apéndice D. Evidencias de ejecución (Postman, pruebas y base de datos)
+
+### Resultado de la suite automatizada de pruebas (Jest):
+```text
+PASS tests/solicitud.test.js
+  Arquitectura del Corte Vertical: Trámites y Certificados (Caso 2)
+    √ 1. Rechaza peticiones a POST /api/solicitudes sin token JWT (HTTP 401) (61 ms)
+    √ 2. Crea una solicitud de certificado con radicado oficial 24/7 (HTTP 201) (31 ms)
+    √ 3. Rechaza solicitud duplicada para el mismo predio y trámite activo (HTTP 409) (17 ms)
+    √ 4. Lista las solicitudes activas del ciudadano autenticado (HTTP 200) (19 ms)
+    √ 5. Permite consultar el estado del trámite en tiempo real por radicado (HTTP 200) (14 ms)
+    √ 6. Permite actualizar observaciones de la solicitud (HTTP 200) (27 ms)
+    √ 7. Aplica borrado lógico: responde 204 y conserva la fila inactiva en la BD (25 ms)
+    √ 8. Endpoint /api/health reporta estado UP y conexión activa a base de datos (11 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        2.017 s
+```
+
+---
+
+## Apéndice E. Historial de commits del repositorio
+
+```text
+d4a92fb feat: incorporar material de sustentacion y certificados
+0a7ba45 Create SECURITY.md for security policy
+1e2bb78 refactor: limpiar codigos duplicados de diagramas y dejar exclusivamente imagenes PNG en docs/diagrams
+13c1ace docs: generar diagramas visuales en SVG y PNG e integrar visualizador en GitHub y Lucidchart
+ae181c9 feat: Portal v2.0 - WebSockets tiempo real + Bootstrap Icons + botón demo
+9f35d11 docs: incorporar configuracion de despliegue docker y manual completo de ejecucion en readme
+8d17f61 docs: compilar documento de arquitectura de software das completo en markdown word y pdf
+54d6852 docs: formalizar registros de decisiones de arquitectura ADR-001, ADR-002 y ADR-003
+6edff04 feat: implementar autenticacion sin estado con tokens jwt y autorizacion rbac
+6b2baf0 test: implementar suite de pruebas de integracion automatizadas con jest y supertest
+b789368 feat: construir portal web ciudadano responsivo para radicacion y consulta 24/7
+345e19c docs: definir esquema ddl de base de datos con restricciones y borrado logico
+196a22e feat: configurar conexion a base de datos y modelos del orm sequelize con asociaciones
+acd7ac1 feat: implementar controlador y rutas para el corte vertical de solicitudes con borrado logico y auditoria
+```

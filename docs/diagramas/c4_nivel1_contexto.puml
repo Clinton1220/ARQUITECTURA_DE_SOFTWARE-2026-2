@@ -1,0 +1,23 @@
+@startuml c4_nivel1_contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contexto del Sistema (C4 Nivel 1) — Alcaldía Municipal
+
+Person(ciudadano, "Ciudadano", "Habitante del municipio que radica y consulta solicitudes de certificados 24/7.")
+Person(funcionario, "Funcionario Municipal", "Servidor de la Secretaría de Gobierno que revisa, aprueba y expide certificados.")
+Person(personeria, "Personería Municipal", "Ente de control y vigilancia que supervisa el cumplimiento del derecho de petición.")
+
+System(sistema_tramites, "Sistema de Trámites y Certificados", "Plataforma web 24/7 para radicación, gestión, emisión y verificación con código QR de certificados oficiales.")
+
+System_Ext(sistema_legado, "Sistema Monolítico 2009 (Legado)", "Software de escritorio heredado bajo estrategia Strangler Fig para consulta histórica.")
+System_Ext(servidor_smtp, "Servidor SMTP / Notificaciones", "Servicio de correo para envío de radicados y certificados PDF.")
+
+Rel(ciudadano, sistema_tramites, "Radica trámites y verifica certificados QR", "HTTPS / JSON")
+Rel(funcionario, sistema_tramites, "Gestiona solicitudes y expide certificados", "HTTPS / JWT")
+Rel(personeria, sistema_tramites, "Audita tiempos y trazabilidad", "HTTPS / Read-only")
+Rel(sistema_tramites, servidor_smtp, "Envía notificaciones de estado", "SMTP / TLS")
+Rel(sistema_tramites, sistema_legado, "Sincroniza datos históricos (Fase Strangler)", "Vistas BD / ETL")
+
+@enduml

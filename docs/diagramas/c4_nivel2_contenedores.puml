@@ -1,0 +1,30 @@
+@startuml c4_nivel2_contenedores
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Diagrama de Contenedores (C4 Nivel 2) — Alcaldía Municipal
+
+Person(ciudadano, "Ciudadano", "Habitante del municipio.")
+Person(funcionario, "Funcionario", "Secretaría de Gobierno.")
+
+System_Boundary(c1, "Sistema de Trámites y Certificados Municipal") {
+    Container(web_app, "Portal Web Ciudadano", "HTML5, CSS3 Vanilla, JavaScript ES6", "Provee interfaz accesible 24/7 para radicación, consulta y verificación QR.")
+    Container(backend_api, "API REST Backend", "Node.js 20 LTS, Express.js", "Expone servicios REST, procesa reglas de negocio, valida JWT y emite eventos en tiempo real.")
+    Container(websockets, "Servicio WebSockets", "Socket.io", "Notificaciones push bidireccionales en vivo de cambios de estado y radicación.")
+    ContainerDb(db_relacional, "Base de Datos Transaccional", "PostgreSQL 16", "Persiste usuarios, trámites, certificados y bitácora inmutable de auditoría con restricciones ACID.")
+}
+
+System_Ext(sistema_legado, "Sistema 2009 (Legado)", "Software de escritorio heredado.")
+
+Rel(ciudadano, web_app, "Usa interfaz pública y formulario", "HTTPS / W3C")
+Rel(funcionario, web_app, "Usa panel administrativo", "HTTPS / W3C")
+
+Rel(web_app, backend_api, "Peticiones CRUD, radicación y verificación", "JSON / HTTPS / JWT")
+Rel(web_app, websockets, "Suscripción a eventos de radicado", "WSS / WebSocket")
+
+Rel(backend_api, db_relacional, "Consultas, inserciones y transacciones ACID (Pool max 10)", "TCP / Puerto 5432 / ORM Sequelize")
+Rel(backend_api, websockets, "Dispara eventos de cambio de estado", "IPC / In-memory")
+Rel(backend_api, sistema_legado, "Lectura de histórico de trámites (Strangler Fig)", "ODBC / Vistas BD")
+
+@enduml

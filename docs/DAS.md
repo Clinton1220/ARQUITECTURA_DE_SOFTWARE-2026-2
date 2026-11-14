@@ -22,10 +22,14 @@
 
 | Versión | Fecha | Autor | Descripción del Cambio | Estado |
 | :---: | :---: | :--- | :--- | :---: |
-| 1.0.0 | 17/09/2026 | Brayan Ibarguen | Versión inicial del DAS: Drivers, C4 Niveles 1 y 2, ADRs y Walking Skeleton HU-01. | Aprobada |
-| 1.5.0 | 17/10/2026 | Brayan Ibarguen | Incorporación de sustentación Clase 4 («Del diagrama a la tabla»), script DDL de certificados y modelo de funcionarios. | Aprobada |
-| 2.0.0 | 06/11/2026 | Brayan Ibarguen | Integración de WebSockets en tiempo real, catálogo interactivo de trámites y suite de pruebas automatizadas (8/8). | Aprobada |
-| 2.5.0 | 21/11/2026 | Brayan Ibarguen | Reestructuración integral según rúbrica oficial APA 7: Preguntas/supuestos, comparación de patrones, 9 tablas mínimas, 5 figuras y apéndices A–E. | Entrega Final |
+| 1.0.0 | 26/09/2026 | Brayan Ibarguen | Clase 1: Ficha de Drivers (RF-01 a RF-10, 8 características ISO/IEC 25010, restricciones y pregunta cliente). Estructura del repositorio. | Aprobada |
+| 1.2.0 | 03/10/2026 | Brayan Ibarguen | Clase 2: Sección 2 completa. Patrón N-Capas + Strangler Fig justificado y tabla comparativa de stack tecnológico. | Aprobada |
+| 1.3.0 | 10/10/2026 | Brayan Ibarguen | Clase 3: Sección 3 (parte 1). Vista de Contexto C4 L1 y Contenedores C4 L2 con fuentes `.puml`, leyendas y lectura de 30 s. | Aprobada |
+| 1.4.0 | 17/10/2026 | Brayan Ibarguen | Clase 4: Sección 3 (parte 2) y 5.2. Diagrama de clases UML, secuencia HU-01 (401/409), script DDL con PK/FK/CHECK/UNIQUE y borrado lógico. | Aprobada |
+| 1.5.0 | 24/10/2026 | Brayan Ibarguen | Clase 5: Sección 4. Formalización de ADRs (ADR-001, ADR-002, ADR-003), diagrama de despliegue y arranque de servidor con BD. | Aprobada |
+| 2.0.0 | 07/11/2026 | Brayan Ibarguen | Clase 6: Sección 5.3. CRUD punta a punta de Solicitudes (Modelo-Controlador-Rutas-API), WebSockets en vivo y Conventional Commits. | Aprobada |
+| 2.5.0 | 14/11/2026 | Brayan Ibarguen | Clase 7: Sección 5.4 y 6. Pruebas Jest (8/8) y Postman, matriz de trade-offs, 3 puntos de sensibilidad (R-01 a R-03) y cierre documental. | Aprobada |
+| 2.6.0 | 21/11/2026 | Brayan Ibarguen | Clase 8: Entrega Final integral según rúbrica y cronograma oficial. Lista de chequeo de 12 ítems cumplida y guía de sustentación oral (Clases 1–8). | Entrega Final |
 
 ---
 
@@ -42,10 +46,15 @@
     - 1.1.1 Problema de negocio
     - 1.1.2 Propuesta de solución
     - 1.1.3 Alcance y fuera de alcance
+    - 1.1.4 Ficha de requerimientos funcionales del escenario (RF-01 a RF-10)
   - 1.2 Historias de usuario arquitectónicamente significativas
   - 1.3 Atributos de calidad prioritarios según ISO/IEC 25010
+    - 1.3.1 Priorización de las ocho (8) características de calidad ISO/IEC 25010
+    - 1.3.2 Escenarios de calidad cuantitativos con métrica medible
   - 1.4 Restricciones técnicas, operativas, de tiempo y normativas
   - 1.5 Preguntas al cliente y supuestos
+    - 1.5.1 Preguntas clave formuladas a la Alcaldía y a la Personería
+    - 1.5.2 Supuestos arquitectónicos adoptados
 - **2. Estrategia arquitectónica y tecnológica**
   - 2.1 Patrón arquitectónico seleccionado y patrones descartados
   - 2.2 Pila tecnológica
@@ -71,11 +80,12 @@
   - 6.3 Conclusión arquitectónica
 - **Referencias**
 - **Apéndices**
-  - Apéndice A. Lista de chequeo de entrega
+  - Apéndice A. Lista de chequeo y matriz de cumplimiento de 12 ítems de la entrega final
   - Apéndice B. Script DDL completo
   - Apéndice C. Código fuente del corte vertical (extractos)
   - Apéndice D. Evidencias de ejecución (Postman, pruebas y base de datos)
   - Apéndice E. Historial de commits del repositorio
+  - Apéndice F. Guía de preparación y banco de respuestas para las sustentaciones orales (Clases 1 a 8)
 
 ---
 
@@ -90,7 +100,7 @@
 - **Tabla 7.** *Endpoints del corte vertical*
 - **Tabla 8.** *Análisis de compromisos entre atributos de calidad*
 - **Tabla 9.** *Puntos de sensibilidad y riesgos técnicos*
-- **Tabla A1.** *Lista de chequeo y matriz de cumplimiento de entrega*
+- **Tabla A1.** *Lista de chequeo y matriz de cumplimiento de 12 ítems de la entrega final*
 
 ---
 
@@ -134,6 +144,20 @@ Se diseñó e implementó un sistema web responsivo con arquitectura desacoplada
 - Aplicación móvil nativa para iOS o Android (se implementa diseño web adaptable *Mobile-First* accesible desde cualquier navegador).
 - Firma digital con certificado PKI comercial emitido por entidad certificadora abierta (se adopta firma electrónica institucional con hash SHA-256 y código QR conforme a la Ley 527 de 1999).
 
+### 1.1.4 Ficha de requerimientos funcionales del escenario (RF-01 a RF-10)
+En cumplimiento de la Ficha de Drivers oficial del escenario (Clase 1), se formalizan los diez (10) requerimientos funcionales obligatorios del sistema municipal:
+
+- **RF-01 (Radicación ciudadana 24/7):** El sistema debe permitir a cualquier ciudadano radicar por internet su solicitud de Certificado de Residencia a cualquier hora, generando un número de radicado oficial consecutivo en formato `RAD-YYYY-XXXXX`.
+- **RF-02 (Carga de soportes digitales):** El sistema debe permitir adjuntar documentos de respaldo en formato digital (copia de documento de identidad y recibo de servicios públicos del predio).
+- **RF-03 (Control estricto de duplicidad):** El sistema debe impedir la radicación de una nueva solicitud si el ciudadano ya cuenta con un trámite activo (en estado 'radicada' o 'en_revision') para el mismo predio y tipo de trámite.
+- **RF-04 (Consulta pública de estado en tiempo real):** El sistema debe ofrecer un servicio público de seguimiento donde el ciudadano pueda consultar el estado de su trámite ingresando únicamente su radicado, sin requerir autenticación.
+- **RF-05 (Bandeja de gestión administrativa):** El sistema debe proporcionar a los funcionarios de la Secretaría de Gobierno un panel para listar, filtrar y gestionar solicitudes pendientes.
+- **RF-06 (Revisión y causal administrativa motivada):** El sistema debe permitir al funcionario competente aprobar o rechazar la solicitud, siendo mandatorio registrar la causal administrativa en caso de rechazo.
+- **RF-07 (Emisión y expedición digital de certificados):** Al aprobarse la solicitud, el sistema debe emitir automáticamente el certificado oficial con identificador único, fecha de emisión, vigencia (90 días) y hash SHA-256.
+- **RF-08 (Incorporación de código QR de verificación):** Todo certificado expedido debe incluir un código QR bidimensional que apunte a la URL pública de validación de fe pública.
+- **RF-09 (Servicio público de validación de autenticidad):** El sistema debe proveer una interfaz pública abierta donde terceros (juzgados, bancos, notarías) puedan escanear el QR o ingresar el código alfanumérico para certificar la validez e integridad del documento.
+- **RF-10 (Bitácora inmutable de auditoría institucional):** El sistema debe registrar en una tabla inalterable cada creación, consulta y transición de estado, capturando identificador de usuario, fecha/hora, acción, estado anterior, estado nuevo e IP de origen para responder ante la Personería Municipal.
+
 ---
 
 ## 1.2 Historias de usuario arquitectónicamente significativas
@@ -152,6 +176,20 @@ Se diseñó e implementó un sistema web responsivo con arquitectura desacoplada
 ---
 
 ## 1.3 Atributos de calidad prioritarios según ISO/IEC 25010
+
+### 1.3.1 Priorización de las ocho (8) características de calidad de la norma ISO/IEC 25010
+En concordancia con los requisitos de la Ficha de Drivers (Clase 1), se analizan y priorizan las ocho características de calidad del producto de software según ISO/IEC 25010:
+
+1. **Seguridad (Prioridad: ALTA - CRÍTICA):** El sistema custodia fe pública institucional y datos ciudadanos sensibles bajo la Ley 1581 de 2012. Requiere autenticación JWT sin estado, cifrado bcrypt de credenciales, autorización RBAC y hashing criptográfico SHA-256.
+2. **Mantenibilidad (Prioridad: ALTA):** La alcaldía carece de ingenieros de planta y depende de soporte tercerizado o un único técnico (RA-02). El desacoplamiento en N-Capas asegura que las modificaciones en tablas o interfaz no rompan la lógica de negocio.
+3. **Confiabilidad (Prioridad: ALTA):** Debe garantizar operación 24/7 sin caídas de ventanilla física, auto-recuperándose ante excepciones imprevistas en menos de 10 segundos mediante Docker.
+4. **Eficiencia de desempeño (Prioridad: ALTA):** Debe soportar picos de radicación matutina y responder consultas públicas de códigos QR en un tiempo P95 $\le 800\text{ ms}$.
+5. **Adecuación funcional (Prioridad: MEDIA-ALTA):** Cobertura rigurosa de los 10 requisitos funcionales (RF-01 a RF-10), en particular el control de trámites duplicados y la asignación oficial de radicados.
+6. **Usabilidad (Prioridad: MEDIA-ALTA):** Interfaz pública ligera, accesible, responsiva y comprensible para ciudadanos de áreas rurales o con bajo nivel de alfabetización digital.
+7. **Portabilidad (Prioridad: MEDIA):** Empaquetamiento estandarizado en contenedores Docker (RO-01) que asegura ejecución idéntica en servidores locales on-premise o en la nube.
+8. **Compatibilidad (Prioridad: MEDIA):** Interoperabilidad de la API REST mediante formato JSON estándar y consumo transparente desde cualquier navegador moderno W3C.
+
+### 1.3.2 Escenarios de calidad cuantitativos con métrica medible
 
 **Tabla 2**  
 *Atributos de calidad prioritarios según ISO/IEC 25010*
@@ -176,12 +214,16 @@ Se diseñó e implementó un sistema web responsivo con arquitectura desacoplada
 | :--- | :---: | :--- | :--- |
 | **Técnica** | RT-01 | Motor de base de datos relacional compatible con SQL estándar (PostgreSQL 16). | Garantizar transacciones ACID estrictas, integridad referencial con llaves foráneas (`ON DELETE RESTRICT`) y eliminación de costos por licenciamiento comercial. |
 | **Técnica** | RT-02 | Arquitectura orientada a servicios REST transportando exclusivamente JSON sobre HTTPS. | Desacoplar la interfaz web ciudadana del backend y habilitar integración futura con otros sistemas de la administración pública. |
+| **Técnica** | RT-03 | Pila tecnológica de código abierto sobre plataforma multiplataforma (Node.js 20 LTS / Express). | Evitar licenciamientos privativos y garantizar portabilidad de ejecución en servidores Linux o Windows. |
+| **Administrativa** | RA-01 | Sujeción al Estatuto General de Contratación Pública (Ley 80 de 1993 y Decreto 1082 de 2015). | Exigencia de licitación pública por fases; la arquitectura debe fundamentarse en software libre sin dependencia cautiva de proveedores (*no vendor lock-in*). |
+| **Administrativa** | RA-02 | Operación y soporte con equipo técnico reducido (1 único funcionario de soporte técnico de la alcaldía sin perfil programador). | La solución debe presentar baja complejidad de administración y mantenimiento, descartando orquestaciones complejas de microservicios distribuidos. |
+| **Administrativa** | RA-03 | Restricción presupuestal municipal: presupuesto cero para adquisición de licencias comerciales de software. | Todo el stack debe componerse de tecnologías open-source gratuitas (Node.js, PostgreSQL, Docker, Linux). |
 | **Operativa** | RO-01 | Despliegue empaquetado en contenedores Docker y Docker Compose sin costos de nube. | Estandarizar el entorno de ejecución, asegurar reproducibilidad en la evaluación y facilitar la migración a servidores institucionales o nube pública. |
-| **De tiempo** | RC-01 | Entrega final del corte vertical y documentación formal el 21 de noviembre de 2026. | Cumplimiento del calendario académico institucional de la asignatura Arquitectura de Software. |
+| **Operativa** | RO-02 | Continuidad ininterrumpida de servicio 24/7 sin dependencia física del horario de ventanilla ni del computador del secretario. | Asegurar que los ciudadanos puedan radicar trámites y validar certificados en cualquier horario y día de la semana. |
 | **Normativa** | RN-01 | Cumplimiento de la Ley Estatutaria 1581 de 2012 (Habeas Data y Protección de Datos Personales en Colombia). | Protección y reserva legal de datos ciudadanos sensibles (direcciones de predios, teléfonos, correos y cédulas). |
 | **Normativa** | RN-02 | Validez jurídica de mensajes de datos y comercio electrónico según la Ley 527 de 1999 de Colombia. | Atribución de validez jurídica y probatoria a los certificados expedidos digitalmente con código QR y hash criptográfico. |
-| **Administrativa** | RA-01 | Sujeción al Estatuto General de Contratación Pública (Ley 80 de 1993 y Decreto 1082 de 2015). | Exigencia de licitación pública por fases; la arquitectura debe fundamentarse en software de código abierto sin dependencia cautiva de proveedores (*no vendor lock-in*). |
-| **Administrativa** | RA-02 | Operación y soporte con equipo técnico reducido (1 único funcionario de soporte técnico, RA-03). | La solución debe presentar baja complejidad de mantenimiento, descartando orquestaciones complejas de microservicios distribuidos. |
+| **Normativa** | RN-03 | Cumplimiento de la Ley General de Archivo (Ley 594 de 2000 de Colombia). | Obligación legal de conservar los expedientes y trámites administrativos por un mínimo de 10 años, prohibiendo el borrado físico de filas. |
+| **De tiempo** | RC-01 | Entrega final del corte vertical y documentación formal el 21 de noviembre de 2026. | Cumplimiento del calendario académico institucional de la asignatura Arquitectura de Software. |
 
 *Nota.* Fuente: Requisitos y marco normativo institucional del Caso 2 (Alcaldía Municipal).
 
@@ -239,7 +281,7 @@ Se seleccionó el patrón arquitectónico en **N-Capas** (Presentación $\righta
 
 | Capa arquitectónica | Tecnología seleccionada | Versión | Alternativa descartada | Justificación técnica (Conexión con AC y Restricciones) |
 | :--- | :--- | :---: | :--- | :--- |
-| **Lenguaje Backend** | JavaScript (Node.js) | 20 LTS | Java 21 / PHP 8 | Motor asíncrono no bloqueante I/O ideal para concurrencia de consultas ciudadanas (**AC-02**); portabilidad y ejecución ligera en Docker. |
+| **Lenguaje Backend** | JavaScript (Node.js) | 20 LTS | Java 21 / PHP 8 | Motor asíncrono no bloqueante I/O ideal para concurrencia de consultas ciudadanas (**AC-02**); portabilidad y ejecución ligera en Docker (**RT-03**). |
 | **Framework Web** | Express.js | 4.19.x | NestJS / Django | Estructura minimalista suficiente para N-Capas sin sobrecarga cognitiva; facilita la mantenibilidad por contratistas externos (**AC-03**). |
 | **ORM / Acceso a Datos** | Sequelize ORM | 6.37.x | TypeORM / SQL nativo en crudo | Modelos estructurados, migraciones versionadas y protección nativa contra inyecciones SQL mediante consultas parametrizadas (**AC-01**). |
 | **Base de Datos** | PostgreSQL | 16-alpine | MongoDB / MySQL | Motor relacional robusto con transacciones ACID, integridad referencial estricta (`ON DELETE RESTRICT`) e índices parciales para unicidad condicional (**RT-01**). |
@@ -264,7 +306,7 @@ Muestra los límites del sistema municipal, identificando los actores humanos qu
 
 ![Vista de contexto del sistema (C4, nivel 1)](diagrams/c4_nivel1_contexto.png)
 
-*Nota.* Diagrama de Contexto elaborado bajo el Modelo C4 (Brown, 2018). Representa a los actores Ciudadano, Funcionario y Personería interactuando con el Sistema de Trámites y Certificados, articulado con el Sistema Legado de 2009 y el Servicio de Notificaciones SMTP.
+*Nota.* Diagrama de Contexto elaborado bajo el Modelo C4 (Brown, 2018). Representa a los actores Ciudadano, Funcionario y Personería interactuando con el Sistema de Trámites y Certificados, articulado con el Sistema Legado de 2009 y el Servicio de Notificaciones SMTP. Fuente en `docs/diagramas/c4_nivel1_contexto.puml`.
 
 > **Párrafo de lectura ejecutiva (30 segundos):**  
 > El Sistema de Trámites y Certificados actúa como punto único de contacto digital 24/7 para el Ciudadano (quien radica solicitudes y valida certificados sin desplazarse), el Funcionario (quien gestiona y emite actos administrativos desde la Secretaría de Gobierno) y la Personería Municipal (que ejerce control y vigilancia institucional). El sistema expone servicios mediante HTTPS, interactúa con un servidor SMTP para el envío de notificaciones y se acopla temporalmente a la base de datos del sistema heredado de 2009 bajo la estrategia *Strangler Fig*, garantizando una transición sin traumas operativos.
@@ -280,7 +322,7 @@ Abre la frontera del sistema para evidenciar las aplicaciones ejecutables, los a
 
 ![Vista de contenedores del sistema (C4, nivel 2)](diagrams/c4_nivel2_contenedores.png)
 
-*Nota.* Diagrama de Contenedores del Modelo C4. Muestra el Portal Web Ciudadano (HTML5/JS), la API REST Backend (Node.js/Express) y la Base de Datos Relacional (PostgreSQL 16).
+*Nota.* Diagrama de Contenedores del Modelo C4. Muestra el Portal Web Ciudadano (HTML5/JS), la API REST Backend (Node.js/Express) y la Base de Datos Relacional (PostgreSQL 16). Fuente en `docs/diagramas/c4_nivel2_contenedores.puml`.
 
 > **Párrafo de lectura ejecutiva (30 segundos):**  
 > El Ciudadano y el Funcionario acceden al sistema a través del Portal Web Ciudadano (interfaz ligera HTML5/CSS3/JS servida por Express). La interfaz se comunica de forma asíncrona mediante HTTPS REST (payloads JSON protegidos con JWT) y WebSockets (Socket.io) con la API Backend en Node.js 20. Esta última procesa la lógica de negocio municipal, verifica permisos RBAC y persiste las operaciones mediante el ORM Sequelize en una base de datos PostgreSQL 16 a través de conexiones TCP seguras en el puerto 5432, garantizando transacciones ACID y persistencia duradera.
@@ -296,7 +338,7 @@ Modela la estructura lógica de los datos persistidos en el sistema, detallando 
 
 ![Diagrama de clases del dominio](diagrams/uml_clases_dominio.png)
 
-*Nota.* Diagrama de Clases UML del Dominio Municipal. Muestra las clases `Ciudadano`, `TipoTramite`, `Solicitud` y `Certificado` con sus multiplicidades y enumeraciones de estado.
+*Nota.* Diagrama de Clases UML del Dominio Municipal. Muestra las clases `Ciudadano`, `TipoTramite`, `Solicitud` y `Certificado` con sus multiplicidades y enumeraciones de estado. Fuente en `docs/diagramas/clases_ciudadano_solicitud_certificado.puml`.
 
 **Tabla 6**  
 *Correspondencia entre clases del dominio y tablas físicas*
@@ -325,7 +367,7 @@ Representa la interacción temporal entre componentes para el escenario arquitec
 
 ![Diagrama de secuencia de la historia de usuario principal (HU-01)](diagrams/uml_secuencia_hu01.png)
 
-*Nota.* Diagrama de Secuencia UML para la HU-01. Ilustra el camino exitoso (HTTP 201) y los dos flujos alternos obligatorios: rechazo por falta de token (HTTP 401) y rechazo por solicitud duplicada activa (HTTP 409).
+*Nota.* Diagrama de Secuencia UML para la HU-01. Ilustra el camino exitoso (HTTP 201) y los dos flujos alternos obligatorios: rechazo por falta de token (HTTP 401) y rechazo por solicitud duplicada activa (HTTP 409). Fuente en `docs/diagramas/secuencia_expedicion_certificado.puml`.
 
 > **Párrafo de lectura ejecutiva (30 segundos):**  
 > Cuando el ciudadano diligencia el formulario web y presiona radicar, el portal envía un `POST /api/solicitudes` con la cabecera `Authorization: Bearer <token>`. El `AuthMiddleware` intercepta la petición; si el token no existe o es apócrifo, aborta con `401 Unauthorized`. Si es válido, el `SolicitudController` consulta al ORM para verificar si ya existe un trámite activo para el mismo predio; en caso afirmativo, responde `409 Conflict`. Si no hay conflicto, abre una transacción atómica, inserta la solicitud con radicado `RAD-2026-XXXXX` y hash SHA-256, graba la auditoría inmutable, confirma el commit en PostgreSQL y retorna `201 Created` al ciudadano.
@@ -341,7 +383,7 @@ Modela la topología de infraestructura, servidores físicos/virtuales, contened
 
 ![Diagrama de despliegue](diagrams/uml_despliegue.png)
 
-*Nota.* Diagrama de Despliegue UML. Ilustra el servidor Docker Host alojando los contenedores aislados `app-backend` y `db`, conectados a la red bridge `red-alcaldia` y al volumen persistente `pgdata`.
+*Nota.* Diagrama de Despliegue UML. Ilustra el servidor Docker Host alojando los contenedores aislados `app-backend` y `db`, conectados a la red bridge `red-alcaldia` y al volumen persistente `pgdata`. Fuente en `docs/diagramas/despliegue_uml.puml`.
 
 > **Párrafo de lectura ejecutiva (30 segundos):**  
 > El despliegue físico se realiza sobre un nodo servidor con Docker Engine. El contenedor `app-backend` empaqueta la aplicación Node.js 20/Express y expone públicamente el puerto 3000 (HTTP y WebSockets) hacia los navegadores de los ciudadanos. Este contenedor se enlaza a través de la red virtual aislada `red-alcaldia` con el contenedor `db` (PostgreSQL 16-alpine), el cual escucha en el puerto interno 5432. Los datos transaccionales se almacenan de forma persistente en el volumen `pgdata` (`/var/lib/postgresql/data`), asegurando que ningún trámite se pierda ante reinicios o destrucción de contenedores.
@@ -560,6 +602,7 @@ Para la evolución a un entorno productivo municipal masivo, se recomienda como 
 - Kruchten, P. (1995). The 4+1 View Model of Architecture. *IEEE Software*, 12(6), 42–50. https://doi.org/10.1109/52.469759
 - Ley 80 de 1993. Por la cual se expide el Estatuto General de Contratación de la Administración Pública. Congreso de la República de Colombia.
 - Ley 527 de 1999. Por medio de la cual se define y reglamenta el acceso y uso de los mensajes de datos, del comercio electrónico y de las firmas digitales. Congreso de la República de Colombia.
+- Ley 594 de 2000. Por medio de la cual se dicta la Ley General de Archivos y se dictan otras disposiciones. Congreso de la República de Colombia.
 - Ley 1581 de 2012. Por la cual se dictan disposiciones generales para la protección de datos personales (Habeas Data). Congreso de la República de Colombia.
 - Martin, R. C. (2017). *Clean Architecture: A Craftsman's Guide to Software Structure and Design*. Prentice Hall.
 - Richards, M., & Ford, N. (2020). *Fundamentals of Software Architecture: An Engineering Approach*. O'Reilly Media.
@@ -569,23 +612,25 @@ Para la evolución a un entorno productivo municipal masivo, se recomienda como 
 
 # Apéndices
 
-## Apéndice A. Lista de chequeo de entrega
+## Apéndice A. Lista de chequeo y matriz de cumplimiento de 12 ítems de la entrega final
 
 **Tabla A1**  
-*Lista de chequeo y matriz de cumplimiento de entrega*
+*Lista de chequeo y matriz de cumplimiento de 12 ítems de la entrega final*
 
-| # | Criterio de evaluación de la rúbrica | ¿Incluido? | Ubicación / Evidencia documental |
+| # | Criterio de evaluación de la rúbrica oficial (Clase 8) | ¿Incluido? | Ubicación / Evidencia documental |
 | :---: | :--- | :---: | :--- |
-| 1 | DAS completo (Secciones 1–6) en Markdown, Word y PDF en `docs/` | **☑ Sí** | `docs/DAS.md`, `docs/DAS.docx` y `docs/DAS.pdf`. |
-| 2 | Mínimo 3 escenarios de calidad ISO/IEC 25010 medibles | **☑ Sí** | Tabla 2 (AC-01 Seguridad, AC-02 Desempeño, AC-03 Mantenibilidad, AC-04 Confiabilidad). |
-| 3 | Mínimo 5 vistas: Contexto C4 L1, Contenedores C4 L2, Clases UML, Secuencia UML, Despliegue UML | **☑ Sí** | Sección 3 (Figuras 1 a 5) con leyendas formales, diagramas en PNG y párrafos de lectura de 30 s. |
-| 4 | Mínimo 1 ADR formalizado en `docs/adr/` | **☑ Sí** | Sección 4 y carpeta `docs/adr/` con 3 ADRs completos (ADR-001, ADR-002 y ADR-003). |
-| 5 | Repositorio Git con $\ge 10$ commits atómicos y `.gitignore` | **☑ Sí** | Historial de commits en Conventional Commits; exclusión estricta de `.env` y `node_modules/`. |
-| 6 | Script SQL DDL con PK, FK, CHECK, UNIQUE y borrado lógico | **☑ Sí** | `db/migrations/001_esquema_inicial.sql` y `002_certificados.sql` con campo `activo`. |
-| 7 | CRUD punta a punta ejecutable (Modelo–Controlador–Rutas–API) | **☑ Sí** | Implementado en `src/` para la entidad `SolicitudTramite` (HU-01). |
-| 8 | Colección Postman y pruebas de integración pasando al 100 % | **☑ Sí** | `postman/coleccion-corte-vertical.json` (6 peticiones) y `tests/solicitud.test.js` (8/8 tests Jest pasando). |
-| 9 | `README.md` que permite instalar y ejecutar sin ayuda del autor | **☑ Sí** | `README.md` con manual paso a paso de ejecución con npm y Docker. |
-| 10 | Análisis de compromisos (*trade-offs*) y $\ge 3$ puntos de sensibilidad | **☑ Sí** | Tabla 8 (Análisis de compromisos) y Tabla 9 (3 riesgos técnicos con mitigación R-01 a R-03). |
+| 1 | **DAS completo en 3 formatos:** Versiones en Markdown, Word (.docx) y PDF (.pdf) en carpeta `docs/`. | **☑ Sí** | `docs/DAS.md`, `docs/DAS.docx` y `docs/DAS.pdf` sincronizados y formateados en APA 7. |
+| 2 | **Ficha de Drivers del escenario diligenciada COMPLETA:** Requisitos funcionales RF-01 a RF-10 y las 8 características ISO/IEC 25010 con prioridad. | **☑ Sí** | Secciones 1.1.4 (RF-01 a RF-10) y 1.3.1 (Priorización de las 8 características ISO/IEC 25010). |
+| 3 | **Mínimo 3 escenarios de calidad ISO/IEC 25010 con métrica cuantitativa medible:** Escenarios con estímulo, entorno, respuesta, métrica y método. | **☑ Sí** | Tabla 2: AC-01 Seguridad (100% 401, bcrypt $\ge 10$), AC-02 Desempeño (P95 $\le 800\text{ ms}$), AC-03 Mantenibilidad ($\le 3$ archivos), AC-04 Confiabilidad (reinicio $< 10\text{ s}$). |
+| 4 | **Restricciones del proyecto balanceadas:** Mínimo 3 restricciones técnicas + 3 administrativas, más operativas, normativas y de tiempo. | **☑ Sí** | Tabla 3: RT-01 a RT-03 (Técnicas), RA-01 a RA-03 (Administrativas), RO-01 a RO-02 (Operativas), RN-01 a RN-03 (Normativas) y RC-01 (Tiempo). |
+| 5 | **Preguntas al cliente y supuestos:** Preguntas formuladas y supuestos adoptados. | **☑ Sí** | Sección 1.5.1 (4 preguntas clave de volumen, gratuidad, archivo y duplicidad) y Sección 1.5.2 (4 supuestos). |
+| 6 | **Patrón arquitectónico justificado y comparación de descartados:** Párrafo obligatorio ligado a AC y restricciones + tabla comparativa. | **☑ Sí** | Sección 2.1 con párrafo de justificación formal y Tabla 4 (N-Capas vs Microservicios, Monolito y Hexagonal). |
+| 7 | **Pila tecnológica completa:** Tabla con capas, versiones, alternativas descartadas y justificación técnica objetiva. | **☑ Sí** | Tabla 5 con 9 filas tecnológicas justificadas con métricas y atributos (sin "es más fácil"). |
+| 8 | **Mínimo 5 vistas de arquitectura:** Contexto C4 L1, Contenedores C4 L2, Clases UML con PK/FK/UK, Secuencia UML (401/409), Despliegue UML. | **☑ Sí** | Sección 3 (Figuras 1 a 5) con leyendas formales, lecturas de 30 s y archivos fuente `.puml` en `docs/diagramas/`. |
+| 9 | **Mínimo 1 ADR formalizado en `docs/adr/`:** Con plantilla oficial (Título, Estatus, Fecha, Contexto, Decisión, Consecuencias). | **☑ Sí** | Sección 4 y carpeta `docs/adr/` con 3 ADRs completos (ADR-001 N-Capas, ADR-002 JWT, ADR-003 Sequelize). |
+| 10 | **Script SQL DDL ejecutado con restricciones y borrado lógico:** PK, FK (`RESTRICT`), CHECK, UNIQUE y columna `activo`. | **☑ Sí** | `db/migrations/001_esquema_inicial.sql`, `002_certificados.sql`, Sección 5.2 y Apéndice B. |
+| 11 | **CRUD punta a punta ejecutable:** Modelo (ORM), Controlador, Rutas y API/Interfaz con borrado lógico y manejo de errores (400, 401, 404, 409). | **☑ Sí** | Sección 5.3 (Tabla 7: Endpoints REST) y código fuente funcional en `src/` para la entidad `SolicitudTramite`. |
+| 12 | **Pruebas automatizadas, trade-offs, riesgos y repositorio GitHub:** Colección Postman, suite Jest 8/8 pasando, Tabla 8 (trade-offs), Tabla 9 (3 riesgos) y commits Conventional. | **☑ Sí** | `tests/solicitud.test.js` (8/8 tests pasando), `postman/coleccion-corte-vertical.json`, Tablas 8 y 9, y repo GitHub. |
 
 ---
 
@@ -724,6 +769,7 @@ Time:        2.017 s
 ## Apéndice E. Historial de commits del repositorio
 
 ```text
+2c1cd7b docs: actualizar DAS a estructura oficial APA 7 segun rubrica docente
 d4a92fb feat: incorporar material de sustentacion y certificados
 0a7ba45 Create SECURITY.md for security policy
 1e2bb78 refactor: limpiar codigos duplicados de diagramas y dejar exclusivamente imagenes PNG en docs/diagrams
@@ -739,3 +785,48 @@ b789368 feat: construir portal web ciudadano responsivo para radicacion y consul
 196a22e feat: configurar conexion a base de datos y modelos del orm sequelize con asociaciones
 acd7ac1 feat: implementar controlador y rutas para el corte vertical de solicitudes con borrado logico y auditoria
 ```
+
+---
+
+## Apéndice F. Guía de preparación y banco de respuestas para las sustentaciones orales (Clases 1 a 8)
+
+Para asegurar el éxito en las dinámicas de sustentación oral semanales del cronograma, se presenta la guía estructurada de intervención para el estudiante:
+
+### Clase 1: «Nuestro cliente, mis drivers»
+- **Presentación del cliente:** Alcaldía Municipal intermedia con un sistema obsoleto de 2009 en el PC del secretario, colas de madrugada y quejas ante Personería.
+- **Mis 3 Atributos de Calidad prioritarios:**
+  1. *AC-01 Seguridad:* 100% de peticiones sin token rechazadas con HTTP 401; contraseñas con bcrypt ($\ge 10$).
+  2. *AC-02 Desempeño:* P95 $\le 800\text{ ms}$ para 50 peticiones concurrentes y 0% de errores 500.
+  3. *AC-03 Mantenibilidad:* Modificación de reglas o campos en $\le 3$ archivos gracias al desacoplamiento en N-Capas.
+- **Pregunta del pool típica:** *¿Por qué la seguridad es más prioritaria que la portabilidad?*  
+  *Respuesta:* Porque la alcaldía emite certificados con fe pública legal y custodia datos protegidos por la Ley 1581 de 2012; una vulneración acarrea sanciones penales y disciplinarias, mientras que la portabilidad en Docker ya está resuelta.
+
+### Clase 2: «Un caso, varias arquitecturas» (mini ADR Battle)
+- **Defensa del patrón y stack:** N-Capas con *Strangler Fig*. Desacopla la lógica sin el costo prohibitivo ni la complejidad de microservicios, cumpliendo RA-02 (un solo técnico de soporte).
+- **Contraste en vivo:** Frente a microservicios, N-Capas ofrece transacciones ACID nativas en PostgreSQL sin consistencia eventual ni patrones Saga complejos.
+
+### Clase 3: «Lectura de 30 segundos»
+- **Contexto (C4-1):** El sistema actúa como núcleo web 24/7 entre el Ciudadano, el Funcionario y la Personería, integrando SMTP y el sistema legado mediante *Strangler Fig*.
+- **Contenedores (C4-2):** El navegador web se conecta por HTTPS y WebSockets a la API Node.js/Express, que persiste transacciones ACID en PostgreSQL 16 (puerto 5432).
+
+### Clase 4: «Del diagrama a la tabla»
+- **Demostración:** La clase `Solicitud` en UML se traduce a `solicitudes_tramite` en PostgreSQL:
+  - Llave primaria `id SERIAL PRIMARY KEY`.
+  - Llaves foráneas con `ON DELETE RESTRICT`.
+  - Índice condicional `uq_solicitud_en_curso` para evitar duplicidad de solicitudes activas.
+  - Columna `activo BOOLEAN NOT NULL DEFAULT TRUE` para borrado lógico obligatorio según la Ley 594 de 2000.
+
+### Clase 5: «ADR Battle del escenario»
+- **ADR-002 (JWT vs Sesiones en Cookie):** Se defiende JWT sin estado porque habilita escalabilidad horizontal en Docker sin requerir servidores de sesión Redis, a cambio del trade-off de no invalidación inmediata antes de expirar (mitigado con expiración a 8 horas y chequeo de campo `activo`).
+
+### Clase 6: «Demo parcial en vivo del corte vertical»
+- **Recorrido:** Ejecución de `POST /api/solicitudes` en Postman/Portal $\rightarrow$ HTTP 201 $\rightarrow$ Inspección de log Vista $\rightarrow$ Controlador $\rightarrow$ ORM $\rightarrow$ Verificación de la fila en `solicitudes_tramite`.
+
+### Clase 7: «Trade-offs y riesgos técnicos»
+- **Trade-off clave:** Se priorizó Mantenibilidad (ORM Sequelize) sobre Rendimiento extremo (SQL crudo) porque la alcaldía tramita ~200 solicitudes/semana y carece de programadores de planta.
+- **Punto de sensibilidad:** Pool de conexiones de base de datos mitigado con dimensionamiento `max: 10` y patrón Singleton.
+
+### Clase 8: «Show & Tell final de 3 minutos»
+- **Paso 1:** Radicación en vivo en el Portal Ciudadano (`http://localhost:3000`) obteniendo radicado oficial con código QR y notificación instantánea por WebSocket.
+- **Paso 2:** Demostración de logs de consola transitando Vista $\rightarrow$ Middleware JWT $\rightarrow$ Controlador $\rightarrow$ ORM Sequelize.
+- **Paso 3:** Consulta de la fila persistida en la base de datos y verificación de que `npm test` supera los 8/8 tests al 100%.

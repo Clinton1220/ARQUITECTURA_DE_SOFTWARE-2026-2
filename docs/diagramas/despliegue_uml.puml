@@ -1,0 +1,44 @@
+@startuml despliegue_uml
+title Diagrama de Despliegue UML — Entorno de Contenedores Docker
+
+node "Servidor Físico / VM (Alcaldía Municipal)" <<Host>> {
+    node "Docker Engine" <<Container Runtime>> {
+        node "Red Aislada Bridge: red-alcaldia" <<Virtual Network>> {
+            
+            node "Contenedor: app-backend" <<Docker Container>> {
+                artifact "Aplicación Node.js (v20 LTS)" as app_bin {
+                    component "Express.js API REST"
+                    component "Socket.io Engine"
+                    component "Sequelize ORM"
+                    folder "Archivos Estáticos (public/)"
+                }
+            }
+
+            node "Contenedor: db" <<Docker Container>> {
+                artifact "PostgreSQL 16-alpine" as pg_bin {
+                    database "alcaldia_tramites" {
+                        [usuarios]
+                        [tipos_tramite]
+                        [solicitudes_tramite]
+                        [certificados]
+                        [auditoria_tramites]
+                    }
+                }
+            }
+        }
+    }
+
+    storage "Volumen Persistente (pgdata)" <<Docker Volume>> as storage_pg {
+        file "Tablas, Índices y WAL (/var/lib/postgresql/data)"
+    }
+}
+
+node "Dispositivo Ciudadano / Funcionario" <<Client Device>> {
+    component "Navegador Web Moderno\n(Chrome, Edge, Firefox, Safari)" as browser
+}
+
+browser -- "app-backend" : "HTTP:3000 / HTTPS\nWebSockets:3000"
+"app-backend" ..> "db" : "TCP:5432\n(Red red-alcaldia)"
+"db" --> storage_pg : "Persistencia física de bloques de disco"
+
+@enduml
